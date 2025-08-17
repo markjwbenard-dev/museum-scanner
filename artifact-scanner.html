@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Denman Island Museum Artifact Scanner</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #f0f0f0; }
+        video { width: 100%; max-width: 400px; border: 2px solid #333; }
+        button { padding: 10px 20px; margin: 10px; background: #4CAF50; color: white; border: none; cursor: pointer; }
+        #result { margin-top: 20px; font-size: 18px; color: #333; }
+    </style>
+    <!-- Load TensorFlow.js library -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <!-- Load MobileNet model (for demo; replace with your custom model) -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest"></script>
+</head>
+<body>
+    <h1>Scan an Artifact!</h1>
+    <p>Point your camera at an exhibit item and snap for deets. (Psst: Works best on mobile!)</p>
+    <video id="video" autoplay playsinline></video>
+    <br>
+    <button id="snap">Snap & Identify</button>
+    <div id="result"></div>
+
+    <script>
+        // Step 1: Access the camera (prefers rear on mobile for artifact scanning)
+        async function setupCamera() {
+            const video = document.getElementById('video');
+            const constraints = {
+                video: { facingMode: 'environment' }  // 'environment' for back camera; 'user' for front
+            };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Camera access denied or error:', err);
+                alert('Oops! Camera access needed for scanning. Check permissions?');
+            }
+        }
+
+        // Step 2: Load the ML model (MobileNet for demo; see below for custom)
+        let model;
+        async function loadModel() {
+            model = await mobilenet.load();  // Pre-trained MobileNet (classifies 1000 common objects)
+            console.log('Model loaded and ready to geek out!');
+        }
+
+        // Step 3: Capture image from video and classify
+        document.getElementById('snap').addEventListener('click', async () => {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Run classification
+            const predictions = await model.classify(canvas);
+            displayResult(predictions);
+        });
+
+        // Step 4: Display result (mock database lookup; replace with your artifact info)
+        function displayResult(predictions) {
+            const resultDiv = document.getElementById('result');
+            if (predictions.length > 0) {
+                const topPrediction = predictions[0];
+                // Mock artifact database (keyed by className; in real life, use Firebase or JSON)
+                const artifactInfo = {
+                    'vase': 'This ancient vase from 500 BC holds secrets of island pottery. Fun fact: It once stored mermaid tears!',
+                    'teapot': 'Behold the enchanted teapot! Brewed elixirs for weary sailors. (Okay, mostly tea.)',
+                    // Add more for your artifacts...
+                    'default': `Hmm, looks like a ${topPrediction.className} with ${Math.round(topPrediction.probability * 100)}% confidence. Not in our collection? Snap again!`
+                };
+                resultDiv.innerHTML = artifactInfo[topPrediction.className] || artifactInfo['default'];
+            } else {
+                resultDiv.innerHTML = 'No predictions? Try better lighting, you shadowy detective!';
+            }
+        }
+
+        // Initialize everything
+        async function init() {
+            await setupCamera();
+            await loadModel();
+        }
+        init();
+    </script>
+</body>
+</html>
