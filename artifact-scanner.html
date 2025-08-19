@@ -45,7 +45,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay for readability */
+            background: rgba(0, 0, 0, 0.5); /* Overlay for readability */
             z-index: 1;
         }
         h1 span {
@@ -79,6 +79,13 @@
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.7);
         }
+        #thumbnail {
+            margin-top: 10px;
+            max-width: 150px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
+            display: none; /* Hidden until first snap */
+        }
         #result {
             margin-top: 20px;
             font-size: 1.1rem;
@@ -92,6 +99,7 @@
             h1 { font-size: 1.5rem; padding: 12px; }
             p { font-size: 0.9rem; }
             button { font-size: 1rem; padding: 10px 20px; }
+            #thumbnail { max-width: 120px; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -106,6 +114,7 @@
         <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
         <br>
         <button id="snap" aria-label="Capture photo and identify artifact">Snap & Identify</button>
+        <img id="thumbnail" alt="Captured artifact thumbnail" aria-hidden="true">
         <div id="result" aria-live="polite"></div>
     </div>
 
@@ -132,13 +141,18 @@
             console.log('Model loaded and ready to geek out!');
         }
 
-        // Step 3: Capture image from video and classify
+        // Step 3: Capture image from video, show thumbnail, and classify
         document.getElementById('snap').addEventListener('click', async () => {
             const video = document.getElementById('video');
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Display thumbnail
+            const thumbnail = document.getElementById('thumbnail');
+            thumbnail.src = canvas.toDataURL('image/jpeg');
+            thumbnail.style.display = 'block'; // Show thumbnail
 
             // Run classification
             const predictions = await model.classify(canvas);
