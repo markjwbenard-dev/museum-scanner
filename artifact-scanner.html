@@ -57,11 +57,39 @@
             color: #cccccc;
             margin-bottom: 20px;
         }
+        #video-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
         video {
             width: 100%;
             max-width: 400px;
             border-radius: 8px;
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.3);
+        }
+        #zoom-slider {
+            writing-mode: bt-lr; /* Vertical orientation */
+            -webkit-appearance: slider-vertical; /* For WebKit browsers */
+            height: 150px;
+            width: 20px;
+            background: #333333;
+            border: 1px solid #00c4b4;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #zoom-slider::-webkit-slider-thumb {
+            background: #00c4b4;
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
+        }
+        #zoom-slider::-moz-range-thumb {
+            background: #00c4b4;
+            border-radius: 4px;
+            width: 20px;
+            height: 20px;
         }
         button {
             background: #00c4b4;
@@ -137,6 +165,7 @@
             color: #baa597;
             margin: 20px 0 10px;
             text-shadow: 0 0 5px rgba(0, 196, 180, 0.3);
+            display: none; /* Hidden until first thumbnail */
         }
         #gallery {
             margin-top: 10px;
@@ -197,6 +226,7 @@
             .gallery-item div { font-size: 0.7rem; }
             #gallery-title { font-size: 1.2rem; }
             #gallery-filter { font-size: 0.9rem; padding: 6px; }
+            #zoom-slider { height: 120px; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -207,9 +237,11 @@
 <body>
     <div class="container">
         <h1><span>Denman Island Museum Artifact Scanner</span></h1>
-        <p>Point your camera at an exhibit item and snap for epic lore. Mobile magic awaits!</p>
-        <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
-        <br>
+        <p>Point your camera at an exhibit item, adjust zoom, and snap for epic lore. Mobile magic awaits!</p>
+        <div id="video-container">
+            <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
+            <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1" aria-label="Adjust camera zoom" aria-valuetext="1x zoom">
+        </div>
         <button id="snap" aria-label="Capture photo and identify artifact">Snap & Identify</button>
         <img id="thumbnail" alt="Captured artifact thumbnail" aria-label="Click to view detailed artifact description">
         <div id="thumbnail-desc" aria-live="polite"></div>
@@ -233,6 +265,7 @@
     <script>
         // Store past snaps for gallery
         let galleryItems = [];
+        let videoStream = null;
 
         // Step 1: Access the camera (prefers rear on mobile for artifact scanning)
         async function setupCamera() {
@@ -241,16 +274,36 @@
                 video: { facingMode: 'environment' }  // 'environment' for back camera; 'user' for front
             };
             try {
-                const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = stream;
+                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = videoStream;
                 console.log('Camera initialized successfully');
+                setupZoom();
             } catch (err) {
                 console.error('Camera access error:', err);
                 alert('Oops! Camera access needed for scanning. Please check permissions and try again.');
             }
         }
 
-        // Step 2: Load the ML model (MobileNet for demo; replace with your custom model)
+        // Step 2: Set up zoom slider
+        function setupZoom() {
+            const zoomSlider = document.getElementById('zoom-slider');
+            zoomSlider.addEventListener('input', async () => {
+                const zoomValue = parseFloat(zoomSlider.value);
+                zoomSlider.setAttribute('aria-valuetext', `${zoomValue}x zoom`);
+                if (videoStream) {
+                    const track = videoStream.getVideoTracks()[0];
+                    try {
+                        await track.applyConstraints({ advanced: [{ zoom: zoomValue }] });
+                        console.log(`Zoom set to ${zoomValue}x`);
+                    } catch (err) {
+                        console.error('Zoom error:', err);
+                        alert('Zoom not supported on this device or camera.');
+                    }
+                }
+            });
+        }
+
+        // Step 3: Load the ML model (MobileNet for demo; replace with your custom model)
         let model;
         async function loadModel() {
             try {
@@ -262,7 +315,7 @@
             }
         }
 
-        // Step 3: Capture image from video, show thumbnail, and classify
+        // Step 4: Capture image from video, show thumbnail, and classify
         document.getElementById('snap').addEventListener('click', async () => {
             const video = document.getElementById('video');
             const resultDiv = document.getElementById('result');
@@ -300,7 +353,7 @@
             }
         });
 
-        // Step 4: Display result, thumbnail description, and add to gallery
+        // Step 5: Display result, thumbnail description, and add to gallery
         function displayResult(predictions, thumbnailDataUrl) {
             const resultDiv = document.getElementById('result');
             const thumbnailDesc = document.getElementById('thumbnail-desc');
@@ -349,11 +402,13 @@
             updateGallery();
         }
 
-        // Step 5: Update gallery display based on filter
+        // Step 6: Update gallery display based on filter
         function updateGallery() {
             const gallery = document.getElementById('gallery');
+            const galleryTitle = document.getElementById('gallery-title');
             const filter = document.getElementById('gallery-filter').value;
             gallery.innerHTML = ''; // Clear existing gallery
+            galleryTitle.style.display = galleryItems.length > 0 ? 'block' : 'none'; // Show title after first thumbnail
             const itemsToShow = filter === 'favorites' ? galleryItems.filter(item => item.isFavorite) : galleryItems;
 
             itemsToShow.forEach((item, index) => {
@@ -395,7 +450,7 @@
             });
         }
 
-        // Step 6: Toggle detailed description on current thumbnail click
+        // Step 7: Toggle detailed description on current thumbnail click
         document.getElementById('thumbnail').addEventListener('click', () => {
             const detailedDesc = document.getElementById('detailed-desc');
             const detailedImg = document.getElementById('detailed-img');
@@ -421,12 +476,12 @@
             detailedDesc.style.display = 'block';
         });
 
-        // Step 7: Close detailed description
+        // Step 8: Close detailed description
         document.getElementById('close-details').addEventListener('click', () => {
             document.getElementById('detailed-desc').style.display = 'none';
         });
 
-        // Step 8: Filter gallery on dropdown change
+        // Step 9: Filter gallery on dropdown change
         document.getElementById('gallery-filter').addEventListener('change', () => {
             updateGallery();
         });
@@ -440,5 +495,3 @@
     </script>
 </body>
 </html>
-</html>
-
