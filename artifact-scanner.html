@@ -29,7 +29,7 @@
         h1 {
             font-size: 1.8rem;
             margin-bottom: 10px;
-            color: #baa597; /* Blue slate (warm beige-brown) */
+            color: #baa597; /* Warm beige-brown */
             padding: 35px; /* Added padding for image bg */
             background-image: url('https://denmanmuseum.ca/wp-content/uploads/2020/04/2020_04_05_14_01_050008-1024x759.jpg'); /* Stone texture */
             background-size: cover;
@@ -159,23 +159,38 @@
             try {
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = stream;
+                console.log('Camera initialized successfully');
             } catch (err) {
-                console.error('Camera access denied or error:', err);
-                alert('Oops! Camera access needed for scanning. Check permissions?');
+                console.error('Camera access error:', err);
+                alert('Oops! Camera access needed for scanning. Please check permissions and try again.');
             }
         }
 
-        // Step 2: Load the ML model (MobileNet for demo; see below for custom)
+        // Step 2: Load the ML model (MobileNet for demo; replace with your custom model)
         let model;
         async function loadModel() {
-            model = await mobilenet.load();  // Pre-trained MobileNet (classifies 1000 common objects)
-            console.log('Model loaded and ready to geek out!');
+            try {
+                model = await mobilenet.load();  // Pre-trained MobileNet
+                console.log('Model loaded successfully');
+            } catch (err) {
+                console.error('Model loading error:', err);
+                alert('Failed to load the identification model. Please refresh and try again.');
+            }
         }
 
         // Step 3: Capture image from video, show thumbnail, and classify
         document.getElementById('snap').addEventListener('click', async () => {
             const video = document.getElementById('video');
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Identifying...'; // Loading indicator
+
+            // Create canvas for capture
             const canvas = document.createElement('canvas');
+            if (!video.videoWidth || !video.videoHeight) {
+                console.error('Video stream not ready');
+                resultDiv.innerHTML = 'Error: Video stream not ready. Try again!';
+                return;
+            }
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -184,10 +199,20 @@
             const thumbnail = document.getElementById('thumbnail');
             thumbnail.src = canvas.toDataURL('image/jpeg');
             thumbnail.style.display = 'block'; // Show thumbnail
+            console.log('Thumbnail captured');
 
             // Run classification
-            const predictions = await model.classify(canvas);
-            displayResult(predictions);
+            try {
+                if (!model) {
+                    throw new Error('Model not loaded');
+                }
+                const predictions = await model.classify(canvas);
+                console.log('Predictions:', predictions);
+                displayResult(predictions);
+            } catch (err) {
+                console.error('Classification error:', err);
+                resultDiv.innerHTML = 'Error identifying artifact. Please try again!';
+            }
         });
 
         // Step 4: Display result, thumbnail description, and set up detailed description
@@ -195,7 +220,7 @@
             const resultDiv = document.getElementById('result');
             const thumbnailDesc = document.getElementById('thumbnail-desc');
             const detailedText = document.getElementById('detailed-text');
-            if (predictions.length > 0) {
+            if (predictions && predictions.length > 0) {
                 const topPrediction = predictions[0];
                 // Mock artifact database (keyed by className; in real life, use Firebase or JSON)
                 const artifactInfo = {
