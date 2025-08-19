@@ -80,9 +80,10 @@
             flex-direction: column;
             align-items: center;
             z-index: 2; /* Above video */
-            background: rgba(37, 37, 37, 0.7); /* Semi-transparent for visibility */
+            background: rgba(37, 37, 37, 0.7); /* 70% opacity */
             padding: 5px;
             border-radius: 4px;
+            margin: 5px; /* Inset within video */
         }
         #zoom-control label {
             font-size: 0.8rem;
@@ -92,7 +93,7 @@
         #zoom-slider {
             writing-mode: bt-lr;
             -webkit-appearance: slider-vertical;
-            height: 80px;
+            height: 240px; /* 80% of ~300px video height */
             width: 20px;
             background: #333333;
             border: 1px solid #00c4b4;
@@ -112,28 +113,39 @@
             height: 20px;
         }
         button {
-            background: #00c4b4;
+            background: #d4a017; /* Golden hue */
             color: #1a1a1a;
-            padding: 12px 24px;
+            padding: 9.6px 19.2px; /* 20% smaller */
             border: none;
             border-radius: 8px;
-            font-size: 1.1rem;
+            font-size: 0.88rem; /* 20% smaller */
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
-            margin: 15px 0;
+            margin: 10px 5px;
         }
         button:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7);
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.7); /* Gold glow */
+        }
+        #snap {
+            background: #00c4b4; /* Teal */
+            color: #1a1a1a;
+            padding: 9.6px 19.2px;
+            font-size: 0.88rem;
+        }
+        #snap:hover {
+            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
         }
         #thumbnail {
             margin-top: 10px;
-            max-width: 150px;
+            width: 100%;
+            max-width: 400px; /* Match video size */
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
             display: none;
-            cursor: pointer;
+            margin-left: auto;
+            margin-right: auto;
         }
         #thumbnail-desc {
             font-size: 0.9rem;
@@ -141,50 +153,36 @@
             margin-top: 5px;
             margin-bottom: 10px;
         }
-        #detailed-desc {
-            display: none;
+        #thumbnail-buttons {
+            display: none; /* Hidden until thumbnail appears */
+            justify-content: center;
+            gap: 10px;
             margin-top: 10px;
-            font-size: 1rem;
-            color: #ffffff;
-            background: #333333;
-            padding: 15px;
-            border-radius: 8px;
-            line-height: 1.5;
-            position: relative;
-            text-align: center;
-        }
-        #detailed-img {
-            max-width: 100px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
-            margin-bottom: 10px;
-        }
-        #detailed-desc button {
-            background: #ff4d4d;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            margin: 10px 5px 0;
-        }
-        #explore-further, #save-to-gallery {
-            background: #00c4b4;
-            padding: 8px 16px;
-            font-size: 0.9rem;
-            margin: 10px 5px 0;
         }
         .favorite-btn {
             background: none;
             border: none;
             color: #cccccc;
-            font-size: 1rem;
+            font-size: 0.88rem; /* Match button size */
             cursor: pointer;
-            padding: 5px;
-            margin: 5px 0;
+            padding: 9.6px;
+            margin: 10px 5px;
         }
         .favorite-btn.favorited {
-            color: #00c4b4;
+            color: #d4a017; /* Golden hue */
         }
         .favorite-btn:hover {
-            color: #00c4b4;
+            color: #d4a017;
+        }
+        #thumbnail-explore, #thumbnail-close {
+            background: transparent;
+            border: 1px solid #d4a017; /* Thin gold outline */
+            color: #d4a017; /* Gold text */
+            padding: 9.6px 19.2px;
+            font-size: 0.88rem;
+        }
+        #thumbnail-explore:hover, #thumbnail-close:hover {
+            box-shadow: 0 0 10px rgba(212, 160, 23, 0.5); /* Subtle gold glow */
         }
         #gallery-title {
             font-size: 1.4rem;
@@ -225,10 +223,10 @@
         #gallery-filter {
             background: #333333;
             color: #ffffff;
-            border: 1px solid #00c4b4;
+            border: 1px solid #d4a017; /* Golden border */
             border-radius: 8px;
             padding: 8px;
-            font-size: 1rem;
+            font-size: 0.88rem;
             cursor: pointer;
         }
         #chat-modal {
@@ -250,7 +248,7 @@
             max-width: 90%;
             max-height: 80%;
             overflow-y: auto;
-            box-shadow: 0 0 15px rgba(0, 196, 180, 0.3);
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.3); /* Gold glow */
         }
         #chat-history {
             max-height: 300px;
@@ -266,7 +264,7 @@
             border-radius: 4px;
         }
         .chat-message.user {
-            background: #00c4b4;
+            background: #d4a017; /* Golden hue */
             color: #1a1a1a;
             text-align: right;
         }
@@ -278,40 +276,42 @@
         #chat-input {
             width: calc(100% - 90px);
             padding: 8px;
-            border: 1px solid #00c4b4;
+            border: 1px solid #d4a017; /* Golden border */
             border-radius: 8px;
             background: #333333;
             color: #ffffff;
         }
         #chat-send, #voice-toggle {
-            padding: 8px 12px;
+            padding: 9.6px 19.2px; /* 20% smaller */
             margin-left: 5px;
-            font-size: 0.9rem;
+            font-size: 0.88rem; /* 20% smaller */
         }
         #chat-close {
-            background: #ff4d4d;
-            padding: 8px 16px;
-            font-size: 0.9rem;
+            background: #d4a017; /* Golden hue */
+            padding: 9.6px 19.2px;
+            font-size: 0.88rem;
             margin-top: 10px;
         }
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; padding: 12px; }
             p { font-size: 0.9rem; }
-            button { font-size: 1rem; padding: 10px 20px; }
-            #thumbnail { max-width: 120px; }
+            button { font-size: 0.8rem; padding: 8px 16px; }
+            #snap { font-size: 0.8rem; padding: 8px 16px; }
+            #thumbnail { max-width: 320px; } /* Match mobile video */
             #thumbnail-desc { font-size: 0.8rem; }
-            #detailed-desc { font-size: 0.9rem; }
-            #detailed-img { max-width: 80px; }
             .gallery-item { max-width: 80px; }
             .gallery-item img { max-width: 80px; }
             .gallery-item div { font-size: 0.7rem; }
+            .favorite-btn { font-size: 0.8rem; padding: 8px; }
+            #thumbnail-explore, #thumbnail-close { font-size: 0.8rem; padding: 8px 16px; }
             #gallery-title { font-size: 1.2rem; }
-            #gallery-filter { font-size: 0.9rem; padding: 6px; }
+            #gallery-filter { font-size: 0.8rem; padding: 6px; }
             #zoom-control label { font-size: 0.7rem; }
-            #zoom-slider { height: 60px; }
+            #zoom-slider { height: 200px; } /* 80% of ~250px video height */
             #chat-container { max-width: 95%; }
             #chat-input { width: calc(100% - 80px); }
-            #chat-send, #voice-toggle { padding: 6px 10px; }
+            #chat-send, #voice-toggle { padding: 8px 16px; font-size: 0.8rem; }
+            #chat-close { padding: 8px 16px; font-size: 0.8rem; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -326,20 +326,17 @@
         <div id="video-container">
             <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
             <div id="zoom-control">
-                <label for="zoom-slider">Zoom Control</label>
+                <label for="zoom-slider">Zoom</label>
                 <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1" aria-label="Zoom control for camera" aria-valuetext="1x zoom">
             </div>
         </div>
         <button id="snap" aria-label="Capture photo and identify artifact">Snap & Identify</button>
-        <img id="thumbnail" alt="Captured artifact thumbnail" aria-label="Click to view detailed artifact description">
+        <img id="thumbnail" alt="Captured artifact thumbnail" aria-label="Captured artifact image">
         <div id="thumbnail-desc" aria-live="polite"></div>
-        <div id="detailed-desc" aria-live="polite">
-            <img id="detailed-img" alt="Selected artifact thumbnail">
-            <div id="detailed-text"></div>
-            <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
-            <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
-            <button id="explore-further" aria-label="Explore further with AI chat">Explore Further</button>
-            <button id="close-details" aria-label="Close detailed description">Close</button>
+        <div id="thumbnail-buttons">
+            <button id="thumbnail-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
+            <button id="thumbnail-explore" aria-label="Explore further with AI chat">Explore Further</button>
+            <button id="thumbnail-close" aria-label="Clear artifact image and description">Close</button>
         </div>
         <div id="result" aria-live="polite"></div>
         <div id="filter-container">
@@ -456,7 +453,7 @@
         function displayResult(predictions, thumbnailDataUrl) {
             const resultDiv = document.getElementById('result');
             const thumbnailDesc = document.getElementById('thumbnail-desc');
-            const detailedText = document.getElementById('detailed-text');
+            const thumbnailButtons = document.getElementById('thumbnail-buttons');
             let info;
 
             if (predictions && predictions.length > 0) {
@@ -478,7 +475,6 @@
                 info = artifactInfo[topPrediction.className] || artifactInfo['default'];
                 resultDiv.innerHTML = info.full;
                 thumbnailDesc.innerHTML = info.brief;
-                detailedText.innerHTML = info.full;
             } else {
                 info = {
                     brief: 'No artifact detected',
@@ -486,16 +482,43 @@
                 };
                 resultDiv.innerHTML = 'No predictions? Try better lighting, you shadowy detective!';
                 thumbnailDesc.innerHTML = info.brief;
-                detailedText.innerHTML = info.full;
             }
 
-            // Store latest snap without adding to gallery
+            // Store latest snap
             latestSnap = {
                 thumbnail: thumbnailDataUrl,
                 brief: info.brief,
                 full: info.full,
                 isFavorite: false
             };
+
+            // Set up thumbnail buttons
+            const favoriteBtn = document.getElementById('thumbnail-favorite');
+            const exploreBtn = document.getElementById('thumbnail-explore');
+            const closeBtn = document.getElementById('thumbnail-close');
+
+            favoriteBtn.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
+            favoriteBtn.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+            favoriteBtn.innerHTML = latestSnap.isFavorite ? '★' : '☆';
+            favoriteBtn.onclick = () => {
+                latestSnap.isFavorite = !latestSnap.isFavorite;
+                updateGallery();
+                favoriteBtn.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
+                favoriteBtn.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                favoriteBtn.innerHTML = latestSnap.isFavorite ? '★' : '☆';
+            };
+
+            exploreBtn.onclick = () => openChatModal(latestSnap);
+            closeBtn.onclick = () => {
+                thumbnail.src = '';
+                thumbnail.style.display = 'none';
+                thumbnailDesc.innerHTML = '';
+                resultDiv.innerHTML = '';
+                thumbnailButtons.style.display = 'none';
+                latestSnap = null;
+            };
+
+            thumbnailButtons.style.display = 'flex';
         }
 
         // Step 6: Update gallery display based on filter
@@ -511,34 +534,49 @@
                 const galleryItem = document.createElement('div');
                 galleryItem.className = 'gallery-item';
                 galleryItem.innerHTML = `
-                    <img src="${item.thumbnail}" alt="Gallery artifact ${index + 1}" aria-label="Click to view detailed artifact description">
+                    <img src="${item.thumbnail}" alt="Gallery artifact ${index + 1}" aria-label="Click to view artifact details">
                     <div>${item.brief}</div>
                     <button class="favorite-btn ${item.isFavorite ? 'favorited' : ''}" aria-label="${item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
                         ${item.isFavorite ? '★' : '☆'}
                     </button>
                 `;
                 galleryItem.querySelector('img').addEventListener('click', () => {
-                    const detailedDesc = document.getElementById('detailed-desc');
-                    const detailedImg = document.getElementById('detailed-img');
-                    const detailedText = document.getElementById('detailed-text');
-                    const detailedFavorite = document.getElementById('detailed-favorite');
-                    const saveToGallery = document.getElementById('save-to-gallery');
-                    const exploreFurther = document.getElementById('explore-further');
-                    detailedImg.src = item.thumbnail;
-                    detailedText.innerHTML = item.full;
-                    detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-                    detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                    detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
-                    detailedFavorite.onclick = () => {
+                    const thumbnail = document.getElementById('thumbnail');
+                    const thumbnailDesc = document.getElementById('thumbnail-desc');
+                    const resultDiv = document.getElementById('result');
+                    const thumbnailButtons = document.getElementById('thumbnail-buttons');
+                    const favoriteBtn = document.getElementById('thumbnail-favorite');
+                    const exploreBtn = document.getElementById('thumbnail-explore');
+                    const closeBtn = document.getElementById('thumbnail-close');
+
+                    thumbnail.src = item.thumbnail;
+                    thumbnail.style.display = 'block';
+                    thumbnailDesc.innerHTML = item.brief;
+                    resultDiv.innerHTML = item.full;
+                    thumbnailButtons.style.display = 'flex';
+
+                    favoriteBtn.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+                    favoriteBtn.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                    favoriteBtn.innerHTML = item.isFavorite ? '★' : '☆';
+                    favoriteBtn.onclick = () => {
                         item.isFavorite = !item.isFavorite;
                         updateGallery();
-                        detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-                        detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                        detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
+                        favoriteBtn.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+                        favoriteBtn.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                        favoriteBtn.innerHTML = item.isFavorite ? '★' : '☆';
                     };
-                    saveToGallery.style.display = 'none'; // Already in gallery
-                    exploreFurther.onclick = () => openChatModal(item);
-                    detailedDesc.style.display = 'block';
+
+                    exploreBtn.onclick = () => openChatModal(item);
+                    closeBtn.onclick = () => {
+                        thumbnail.src = '';
+                        thumbnail.style.display = 'none';
+                        thumbnailDesc.innerHTML = '';
+                        resultDiv.innerHTML = '';
+                        thumbnailButtons.style.display = 'none';
+                        latestSnap = null;
+                    };
+
+                    latestSnap = item;
                 });
                 galleryItem.querySelector('.favorite-btn').addEventListener('click', () => {
                     item.isFavorite = !item.isFavorite;
@@ -548,50 +586,12 @@
             });
         }
 
-        // Step 7: Toggle detailed description on current thumbnail click
-        document.getElementById('thumbnail').addEventListener('click', () => {
-            if (!latestSnap) return;
-            const detailedDesc = document.getElementById('detailed-desc');
-            const detailedImg = document.getElementById('detailed-img');
-            const detailedText = document.getElementById('detailed-text');
-            const detailedFavorite = document.getElementById('detailed-favorite');
-            const saveToGallery = document.getElementById('save-to-gallery');
-            const exploreFurther = document.getElementById('explore-further');
-            detailedImg.src = latestSnap.thumbnail;
-            detailedText.innerHTML = latestSnap.full;
-            detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-            detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-            detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
-            detailedFavorite.onclick = () => {
-                latestSnap.isFavorite = !latestSnap.isFavorite;
-                updateGallery();
-                detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-                detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
-            };
-            saveToGallery.style.display = galleryItems.includes(latestSnap) ? 'none' : 'inline-block';
-            saveToGallery.onclick = () => {
-                if (!galleryItems.includes(latestSnap)) {
-                    galleryItems.push(latestSnap);
-                    updateGallery();
-                    saveToGallery.style.display = 'none';
-                }
-            };
-            exploreFurther.onclick = () => openChatModal(latestSnap);
-            detailedDesc.style.display = 'block';
-        });
-
-        // Step 8: Close detailed description
-        document.getElementById('close-details').addEventListener('click', () => {
-            document.getElementById('detailed-desc').style.display = 'none';
-        });
-
-        // Step 9: Filter gallery on dropdown change
+        // Step 7: Filter gallery on dropdown change
         document.getElementById('gallery-filter').addEventListener('change', () => {
             updateGallery();
         });
 
-        // Step 10: Chat modal functionality with xAI API
+        // Step 8: Chat modal functionality with xAI API
         function openChatModal(item) {
             const chatModal = document.getElementById('chat-modal');
             const chatHistory = document.getElementById('chat-history');
