@@ -145,7 +145,7 @@
             font-size: 0.9rem;
             margin: 10px 5px 0;
         }
-        #explore-further {
+        #explore-further, #save-to-gallery {
             background: #00c4b4;
             padding: 8px 16px;
             font-size: 0.9rem;
@@ -301,7 +301,7 @@
 <body>
     <div class="container">
         <h1><span>Denman Island Museum Artifact Scanner</span></h1>
-        <p>Point your camera at an exhibit item, adjust zoom, and snap for epic lore. Mobile magic awaits!</p>
+        <p>Point your camera at an exhibit item, adjust zoom, snap, and save to gallery for epic lore!</p>
         <div id="video-container">
             <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
             <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1" aria-label="Adjust camera zoom" aria-valuetext="1x zoom">
@@ -313,6 +313,7 @@
             <img id="detailed-img" alt="Selected artifact thumbnail">
             <div id="detailed-text"></div>
             <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
+            <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
             <button id="explore-further" aria-label="Explore further with AI chat">Explore Further</button>
             <button id="close-details" aria-label="Close detailed description">Close</button>
         </div>
@@ -324,7 +325,7 @@
             </select>
         </div>
         <h2 id="gallery-title" aria-label="Artifact Gallery">Artifact Gallery</h2>
-        <div id="gallery" aria-label="Gallery of previously scanned artifacts"></div>
+        <div id="gallery" aria-label="Gallery of saved artifacts"></div>
     </div>
     <div id="chat-modal" aria-label="AI chat for artifact exploration">
         <div id="chat-container">
@@ -337,11 +338,12 @@
     </div>
 
     <script>
-        // Store past snaps for gallery
+        // Store past snaps for gallery and latest snap
         let galleryItems = [];
         let videoStream = null;
         let recognition = null;
         let isVoiceActive = false;
+        let latestSnap = null;
 
         // Step 1: Access the camera
         async function setupCamera() {
@@ -426,7 +428,7 @@
             }
         });
 
-        // Step 5: Display result, thumbnail description, and add to gallery
+        // Step 5: Display result, thumbnail description, and store latest snap
         function displayResult(predictions, thumbnailDataUrl) {
             const resultDiv = document.getElementById('result');
             const thumbnailDesc = document.getElementById('thumbnail-desc');
@@ -463,14 +465,13 @@
                 detailedText.innerHTML = info.full;
             }
 
-            const galleryItem = {
+            // Store latest snap without adding to gallery
+            latestSnap = {
                 thumbnail: thumbnailDataUrl,
                 brief: info.brief,
                 full: info.full,
                 isFavorite: false
             };
-            galleryItems.push(galleryItem);
-            updateGallery();
         }
 
         // Step 6: Update gallery display based on filter
@@ -497,6 +498,7 @@
                     const detailedImg = document.getElementById('detailed-img');
                     const detailedText = document.getElementById('detailed-text');
                     const detailedFavorite = document.getElementById('detailed-favorite');
+                    const saveToGallery = document.getElementById('save-to-gallery');
                     const exploreFurther = document.getElementById('explore-further');
                     detailedImg.src = item.thumbnail;
                     detailedText.innerHTML = item.full;
@@ -510,6 +512,7 @@
                         detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
                         detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
                     };
+                    saveToGallery.style.display = 'none'; // Already in gallery
                     exploreFurther.onclick = () => openChatModal(item);
                     detailedDesc.style.display = 'block';
                 });
@@ -523,29 +526,34 @@
 
         // Step 7: Toggle detailed description on current thumbnail click
         document.getElementById('thumbnail').addEventListener('click', () => {
+            if (!latestSnap) return;
             const detailedDesc = document.getElementById('detailed-desc');
             const detailedImg = document.getElementById('detailed-img');
             const detailedText = document.getElementById('detailed-text');
             const detailedFavorite = document.getElementById('detailed-favorite');
+            const saveToGallery = document.getElementById('save-to-gallery');
             const exploreFurther = document.getElementById('explore-further');
-            const latestItem = galleryItems[galleryItems.length - 1] || {
-                thumbnail: '',
-                full: 'No artifact available',
-                isFavorite: false
-            };
-            detailedImg.src = latestItem.thumbnail;
-            detailedText.innerHTML = latestItem.full;
-            detailedFavorite.className = `favorite-btn ${latestItem.isFavorite ? 'favorited' : ''}`;
-            detailedFavorite.setAttribute('aria-label', latestItem.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-            detailedFavorite.innerHTML = latestItem.isFavorite ? '★' : '☆';
+            detailedImg.src = latestSnap.thumbnail;
+            detailedText.innerHTML = latestSnap.full;
+            detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
+            detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+            detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
             detailedFavorite.onclick = () => {
-                latestItem.isFavorite = !latestItem.isFavorite;
+                latestSnap.isFavorite = !latestSnap.isFavorite;
                 updateGallery();
-                detailedFavorite.className = `favorite-btn ${latestItem.isFavorite ? 'favorited' : ''}`;
-                detailedFavorite.setAttribute('aria-label', latestItem.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
+                detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
+                detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
             };
-            exploreFurther.onclick = () => openChatModal(latestItem);
+            saveToGallery.style.display = galleryItems.includes(latestSnap) ? 'none' : 'inline-block';
+            saveToGallery.onclick = () => {
+                if (!galleryItems.includes(latestSnap)) {
+                    galleryItems.push(latestSnap);
+                    updateGallery();
+                    saveToGallery.style.display = 'none';
+                }
+            };
+            exploreFurther.onclick = () => openChatModal(latestSnap);
             detailedDesc.style.display = 'block';
         });
 
@@ -559,7 +567,7 @@
             updateGallery();
         });
 
-        // Step 10: Chat modal functionality
+        // Step 10: Chat modal functionality with xAI API
         function openChatModal(item) {
             const chatModal = document.getElementById('chat-modal');
             const chatHistory = document.getElementById('chat-history');
@@ -571,15 +579,38 @@
             const voiceToggle = document.getElementById('voice-toggle');
             const chatClose = document.getElementById('chat-close');
 
-            // Mock LLM response (replace with real API call in production)
-            function getLLMResponse(userInput, context) {
-                const fullContext = `Artifact: ${context.brief}. Description: ${context.full}. User question: ${userInput}`;
-                // Mock response for demo
-                return `Here's some info based on your question about the ${context.brief}: ${context.full} Want more details? Ask away! (Note: This is a mock response; integrate with xAI API at https://x.ai/api for real LLM functionality.)`;
+            // xAI API integration (via proxy to secure API key)
+            async function getLLMResponse(userInput, context) {
+                try {
+                    const response = await fetch('/api/xai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: 'grok-beta',
+                            messages: [
+                                {
+                                    role: 'system',
+                                    content: `You are an expert on Denman Island artifacts. Provide detailed, engaging answers about the artifact: ${context.brief}. Description: ${context.full}.`
+                                },
+                                { role: 'user', content: userInput }
+                            ],
+                            max_tokens: 200,
+                            temperature: 0.7
+                        })
+                    });
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    const data = await response.json();
+                    return data.choices[0].message.content;
+                } catch (err) {
+                    console.error('xAI API error:', err);
+                    return `Oops, something broke while chatting with Grok! Try again or check your server setup. (Error: ${err.message})`;
+                }
             }
 
             // Text input handling
-            chatSend.onclick = () => {
+            chatSend.onclick = async () => {
                 const userInput = chatInput.value.trim();
                 if (userInput) {
                     const userMessage = document.createElement('div');
@@ -588,12 +619,15 @@
                     chatHistory.appendChild(userMessage);
                     const botMessage = document.createElement('div');
                     botMessage.className = 'chat-message bot';
-                    botMessage.textContent = getLLMResponse(userInput, item);
+                    botMessage.textContent = 'Thinking...';
                     chatHistory.appendChild(botMessage);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                    const response = await getLLMResponse(userInput, item);
+                    botMessage.textContent = response;
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                     chatInput.value = '';
                     if (isVoiceActive) {
-                        speak(botMessage.textContent);
+                        speak(response);
                     }
                 }
             };
