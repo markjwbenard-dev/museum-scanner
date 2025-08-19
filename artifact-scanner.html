@@ -29,7 +29,7 @@
         h1 {
             font-size: 1.8rem;
             margin-bottom: 10px;
-            color: #baa597; /* Blue slate */
+            color: #baa597; /* Blue slate (warm beige-brown) */
             padding: 35px; /* Added padding for image bg */
             background-image: url('https://denmanmuseum.ca/wp-content/uploads/2020/04/2020_04_05_14_01_050008-1024x759.jpg'); /* Stone texture */
             background-size: cover;
@@ -85,6 +85,30 @@
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
             display: none; /* Hidden until first snap */
+            cursor: pointer; /* Indicate clickability */
+        }
+        #thumbnail-desc {
+            font-size: 0.9rem;
+            color: #cccccc;
+            margin-top: 5px;
+            margin-bottom: 10px;
+        }
+        #detailed-desc {
+            display: none; /* Hidden until thumbnail clicked */
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #ffffff;
+            background: #333333;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.5;
+            position: relative;
+        }
+        #detailed-desc button {
+            background: #ff4d4d;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            margin-top: 10px;
         }
         #result {
             margin-top: 20px;
@@ -100,6 +124,8 @@
             p { font-size: 0.9rem; }
             button { font-size: 1rem; padding: 10px 20px; }
             #thumbnail { max-width: 120px; }
+            #thumbnail-desc { font-size: 0.8rem; }
+            #detailed-desc { font-size: 0.9rem; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -114,7 +140,12 @@
         <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
         <br>
         <button id="snap" aria-label="Capture photo and identify artifact">Snap & Identify</button>
-        <img id="thumbnail" alt="Captured artifact thumbnail" aria-hidden="true">
+        <img id="thumbnail" alt="Captured artifact thumbnail" aria-label="Click to view detailed artifact description">
+        <div id="thumbnail-desc" aria-live="polite"></div>
+        <div id="detailed-desc" aria-live="polite">
+            <div id="detailed-text"></div>
+            <button id="close-details" aria-label="Close detailed description">Close</button>
+        </div>
         <div id="result" aria-live="polite"></div>
     </div>
 
@@ -159,23 +190,49 @@
             displayResult(predictions);
         });
 
-        // Step 4: Display result (mock database lookup; replace with your artifact info)
+        // Step 4: Display result, thumbnail description, and set up detailed description
         function displayResult(predictions) {
             const resultDiv = document.getElementById('result');
+            const thumbnailDesc = document.getElementById('thumbnail-desc');
+            const detailedText = document.getElementById('detailed-text');
             if (predictions.length > 0) {
                 const topPrediction = predictions[0];
                 // Mock artifact database (keyed by className; in real life, use Firebase or JSON)
                 const artifactInfo = {
-                    'vase': 'This ancient vase from 500 BC holds secrets of island pottery. Fun fact: It once stored mermaid tears!',
-                    'teapot': 'Behold the enchanted teapot! Brewed elixirs for weary sailors. (Okay, mostly tea.)',
-                    // Add more for your artifacts...
-                    'default': `Hmm, looks like a ${topPrediction.className} with ${Math.round(topPrediction.probability * 100)}% confidence. Not in our collection? Snap again!`
+                    'vase': {
+                        brief: 'Ancient Vase',
+                        full: 'This ancient vase from 500 BC holds secrets of island pottery. Fun fact: It once stored mermaid tears, or so the legends say! Crafted by skilled artisans, it showcases intricate patterns unique to Denman’s coastal heritage.'
+                    },
+                    'teapot': {
+                        brief: 'Enchanted Teapot',
+                        full: 'Behold the enchanted teapot! Brewed elixirs for weary sailors (okay, mostly tea). This 19th-century relic was found on a shipwreck near Denman Island, symbolizing the island’s maritime history.'
+                    },
+                    'default': {
+                        brief: `Possible ${topPrediction.className}`,
+                        full: `Hmm, looks like a ${topPrediction.className} with ${Math.round(topPrediction.probability * 100)}% confidence. Not in our collection? Try better lighting and snap again, you shadowy detective!`
+                    }
                 };
-                resultDiv.innerHTML = artifactInfo[topPrediction.className] || artifactInfo['default'];
+                const info = artifactInfo[topPrediction.className] || artifactInfo['default'];
+                resultDiv.innerHTML = info.full; // Main result shows full description
+                thumbnailDesc.innerHTML = info.brief; // Thumbnail shows brief description
+                detailedText.innerHTML = info.full; // Detailed view shows full description
             } else {
                 resultDiv.innerHTML = 'No predictions? Try better lighting, you shadowy detective!';
+                thumbnailDesc.innerHTML = 'No artifact detected';
+                detailedText.innerHTML = 'No detailed info available. Snap again!';
             }
         }
+
+        // Step 5: Toggle detailed description on thumbnail click
+        document.getElementById('thumbnail').addEventListener('click', () => {
+            const detailedDesc = document.getElementById('detailed-desc');
+            detailedDesc.style.display = detailedDesc.style.display === 'block' ? 'none' : 'block';
+        });
+
+        // Step 6: Close detailed description
+        document.getElementById('close-details').addEventListener('click', () => {
+            document.getElementById('detailed-desc').style.display = 'none';
+        });
 
         // Initialize everything
         async function init() {
