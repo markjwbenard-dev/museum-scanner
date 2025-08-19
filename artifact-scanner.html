@@ -103,35 +103,53 @@
             border-radius: 8px;
             line-height: 1.5;
             position: relative;
+            text-align: center;
+        }
+        #detailed-img {
+            max-width: 100px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
+            margin-bottom: 10px;
         }
         #detailed-desc button {
             background: #ff4d4d;
             padding: 8px 16px;
             font-size: 0.9rem;
-            margin-top: 10px;
+            margin: 10px 5px 0;
+        }
+        .favorite-btn {
+            background: none;
+            border: none;
+            color: #cccccc;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 5px;
+            margin: 5px 0;
+        }
+        .favorite-btn.favorited {
+            color: #00c4b4;
+        }
+        .favorite-btn:hover {
+            color: #00c4b4;
+        }
+        #gallery-title {
+            font-size: 1.4rem;
+            color: #baa597;
+            margin: 20px 0 10px;
+            text-shadow: 0 0 5px rgba(0, 196, 180, 0.3);
         }
         #gallery {
-            margin-top: 20px;
+            margin-top: 10px;
             display: flex;
-            overflow-x: auto;
+            flex-wrap: wrap;
             gap: 10px;
             padding: 10px;
-            scrollbar-width: thin;
-            scrollbar-color: #00c4b4 #333333;
-        }
-        #gallery::-webkit-scrollbar {
-            height: 8px;
-        }
-        #gallery::-webkit-scrollbar-thumb {
-            background: #00c4b4;
-            border-radius: 4px;
-        }
-        #gallery::-webkit-scrollbar-track {
-            background: #333333;
+            justify-content: center;
         }
         .gallery-item {
             flex: 0 0 auto;
             text-align: center;
+            max-width: 100px;
         }
         .gallery-item img {
             max-width: 100px;
@@ -144,20 +162,10 @@
             color: #cccccc;
             margin-top: 5px;
         }
-        .favorite-btn {
-            background: none;
-            border: none;
-            color: #cccccc;
-            font-size: 1rem;
-            cursor: pointer;
-            padding: 5px;
-            margin-top: 5px;
-        }
-        .favorite-btn.favorited {
-            color: #00c4b4;
-        }
-        .favorite-btn:hover {
-            color: #00c4b4;
+        #filter-container {
+            text-align: right;
+            padding: 0 10px;
+            margin-top: 20px; /* More space above filter */
         }
         #gallery-filter {
             background: #333333;
@@ -166,14 +174,14 @@
             border-radius: 8px;
             padding: 8px;
             font-size: 1rem;
-            margin-bottom: 10px;
             cursor: pointer;
         }
         @media (min-width: 600px) {
             #gallery {
-                display: grid;
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-                overflow-x: hidden;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
             }
         }
         @media (max-width: 600px) {
@@ -183,8 +191,11 @@
             #thumbnail { max-width: 120px; }
             #thumbnail-desc { font-size: 0.8rem; }
             #detailed-desc { font-size: 0.9rem; }
+            #detailed-img { max-width: 80px; }
+            .gallery-item { max-width: 80px; }
             .gallery-item img { max-width: 80px; }
             .gallery-item div { font-size: 0.7rem; }
+            #gallery-title { font-size: 1.2rem; }
             #gallery-filter { font-size: 0.9rem; padding: 6px; }
         }
     </style>
@@ -203,14 +214,19 @@
         <img id="thumbnail" alt="Captured artifact thumbnail" aria-label="Click to view detailed artifact description">
         <div id="thumbnail-desc" aria-live="polite"></div>
         <div id="detailed-desc" aria-live="polite">
+            <img id="detailed-img" alt="Selected artifact thumbnail">
             <div id="detailed-text"></div>
+            <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
             <button id="close-details" aria-label="Close detailed description">Close</button>
         </div>
         <div id="result" aria-live="polite"></div>
-        <select id="gallery-filter" aria-label="Filter gallery by all or favorites">
-            <option value="all">All</option>
-            <option value="favorites">Favorites</option>
-        </select>
+        <div id="filter-container">
+            <select id="gallery-filter" aria-label="Filter gallery by all or favorites">
+                <option value="all">All</option>
+                <option value="favorites">Favorites</option>
+            </select>
+        </div>
+        <h2 id="gallery-title" aria-label="Artifact Gallery">Artifact Gallery</h2>
         <div id="gallery" aria-label="Gallery of previously scanned artifacts"></div>
     </div>
 
@@ -353,7 +369,21 @@
                 // Thumbnail click for detailed description
                 galleryItem.querySelector('img').addEventListener('click', () => {
                     const detailedDesc = document.getElementById('detailed-desc');
-                    document.getElementById('detailed-text').innerHTML = item.full;
+                    const detailedImg = document.getElementById('detailed-img');
+                    const detailedText = document.getElementById('detailed-text');
+                    const detailedFavorite = document.getElementById('detailed-favorite');
+                    detailedImg.src = item.thumbnail;
+                    detailedText.innerHTML = item.full;
+                    detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+                    detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                    detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
+                    detailedFavorite.onclick = () => {
+                        item.isFavorite = !item.isFavorite;
+                        updateGallery();
+                        detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+                        detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                        detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
+                    };
                     detailedDesc.style.display = 'block';
                 });
                 // Favorite button click
@@ -368,7 +398,27 @@
         // Step 6: Toggle detailed description on current thumbnail click
         document.getElementById('thumbnail').addEventListener('click', () => {
             const detailedDesc = document.getElementById('detailed-desc');
-            detailedDesc.style.display = detailedDesc.style.display === 'block' ? 'none' : 'block';
+            const detailedImg = document.getElementById('detailed-img');
+            const detailedText = document.getElementById('detailed-text');
+            const detailedFavorite = document.getElementById('detailed-favorite');
+            const latestItem = galleryItems[galleryItems.length - 1] || {
+                thumbnail: '',
+                full: 'No artifact available',
+                isFavorite: false
+            };
+            detailedImg.src = latestItem.thumbnail;
+            detailedText.innerHTML = latestItem.full;
+            detailedFavorite.className = `favorite-btn ${latestItem.isFavorite ? 'favorited' : ''}`;
+            detailedFavorite.setAttribute('aria-label', latestItem.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+            detailedFavorite.innerHTML = latestItem.isFavorite ? '★' : '☆';
+            detailedFavorite.onclick = () => {
+                latestItem.isFavorite = !latestItem.isFavorite;
+                updateGallery();
+                detailedFavorite.className = `favorite-btn ${latestItem.isFavorite ? 'favorited' : ''}`;
+                detailedFavorite.setAttribute('aria-label', latestItem.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                detailedFavorite.innerHTML = latestItem.isFavorite ? '★' : '☆';
+            };
+            detailedDesc.style.display = 'block';
         });
 
         // Step 7: Close detailed description
@@ -390,3 +440,5 @@
     </script>
 </body>
 </html>
+</html>
+
