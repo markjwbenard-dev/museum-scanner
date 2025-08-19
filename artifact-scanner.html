@@ -30,7 +30,7 @@
             font-size: 1.8rem;
             margin-bottom: 10px;
             color: #baa597; /* Warm beige-brown */
-            padding: 35px; /* Added padding for image bg */
+            padding: 35px;
             background-image: url('https://denmanmuseum.ca/wp-content/uploads/2020/04/2020_04_05_14_01_050008-1024x759.jpg'); /* Stone texture */
             background-size: cover;
             background-position: center;
@@ -45,12 +45,12 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5); /* Overlay for readability */
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1;
         }
         h1 span {
             position: relative;
-            z-index: 2; /* Text above overlay */
+            z-index: 2;
         }
         p {
             font-size: 1rem;
@@ -70,8 +70,8 @@
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.3);
         }
         #zoom-slider {
-            writing-mode: bt-lr; /* Vertical orientation */
-            -webkit-appearance: slider-vertical; /* For WebKit browsers */
+            writing-mode: bt-lr;
+            -webkit-appearance: slider-vertical;
             height: 150px;
             width: 20px;
             background: #333333;
@@ -112,8 +112,8 @@
             max-width: 150px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
-            display: none; /* Hidden until first snap */
-            cursor: pointer; /* Indicate clickability */
+            display: none;
+            cursor: pointer;
         }
         #thumbnail-desc {
             font-size: 0.9rem;
@@ -122,7 +122,7 @@
             margin-bottom: 10px;
         }
         #detailed-desc {
-            display: none; /* Hidden until thumbnail clicked */
+            display: none;
             margin-top: 10px;
             font-size: 1rem;
             color: #ffffff;
@@ -141,6 +141,12 @@
         }
         #detailed-desc button {
             background: #ff4d4d;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            margin: 10px 5px 0;
+        }
+        #explore-further {
+            background: #00c4b4;
             padding: 8px 16px;
             font-size: 0.9rem;
             margin: 10px 5px 0;
@@ -165,7 +171,7 @@
             color: #baa597;
             margin: 20px 0 10px;
             text-shadow: 0 0 5px rgba(0, 196, 180, 0.3);
-            display: none; /* Hidden until first thumbnail */
+            display: none;
         }
         #gallery {
             margin-top: 10px;
@@ -194,7 +200,7 @@
         #filter-container {
             text-align: right;
             padding: 0 10px;
-            margin-top: 20px; /* More space above filter */
+            margin-top: 20px;
         }
         #gallery-filter {
             background: #333333;
@@ -205,13 +211,68 @@
             font-size: 1rem;
             cursor: pointer;
         }
-        @media (min-width: 600px) {
-            #gallery {
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 10px;
-            }
+        #chat-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        #chat-container {
+            background: #252525;
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            box-shadow: 0 0 15px rgba(0, 196, 180, 0.3);
+        }
+        #chat-history {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #333333;
+            border-radius: 8px;
+        }
+        .chat-message {
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .chat-message.user {
+            background: #00c4b4;
+            color: #1a1a1a;
+            text-align: right;
+        }
+        .chat-message.bot {
+            background: #cccccc;
+            color: #1a1a1a;
+            text-align: left;
+        }
+        #chat-input {
+            width: calc(100% - 90px);
+            padding: 8px;
+            border: 1px solid #00c4b4;
+            border-radius: 8px;
+            background: #333333;
+            color: #ffffff;
+        }
+        #chat-send, #voice-toggle {
+            padding: 8px 12px;
+            margin-left: 5px;
+            font-size: 0.9rem;
+        }
+        #chat-close {
+            background: #ff4d4d;
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            margin-top: 10px;
         }
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; padding: 12px; }
@@ -227,6 +288,9 @@
             #gallery-title { font-size: 1.2rem; }
             #gallery-filter { font-size: 0.9rem; padding: 6px; }
             #zoom-slider { height: 120px; }
+            #chat-container { max-width: 95%; }
+            #chat-input { width: calc(100% - 80px); }
+            #chat-send, #voice-toggle { padding: 6px 10px; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -249,6 +313,7 @@
             <img id="detailed-img" alt="Selected artifact thumbnail">
             <div id="detailed-text"></div>
             <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
+            <button id="explore-further" aria-label="Explore further with AI chat">Explore Further</button>
             <button id="close-details" aria-label="Close detailed description">Close</button>
         </div>
         <div id="result" aria-live="polite"></div>
@@ -261,17 +326,28 @@
         <h2 id="gallery-title" aria-label="Artifact Gallery">Artifact Gallery</h2>
         <div id="gallery" aria-label="Gallery of previously scanned artifacts"></div>
     </div>
+    <div id="chat-modal" aria-label="AI chat for artifact exploration">
+        <div id="chat-container">
+            <div id="chat-history" aria-live="polite"></div>
+            <input id="chat-input" type="text" placeholder="Ask about the artifact..." aria-label="Enter your question about the artifact">
+            <button id="chat-send" aria-label="Send chat message">Send</button>
+            <button id="voice-toggle" aria-label="Toggle voice input">🎤</button>
+            <button id="chat-close" aria-label="Close chat">Close</button>
+        </div>
+    </div>
 
     <script>
         // Store past snaps for gallery
         let galleryItems = [];
         let videoStream = null;
+        let recognition = null;
+        let isVoiceActive = false;
 
-        // Step 1: Access the camera (prefers rear on mobile for artifact scanning)
+        // Step 1: Access the camera
         async function setupCamera() {
             const video = document.getElementById('video');
             const constraints = {
-                video: { facingMode: 'environment' }  // 'environment' for back camera; 'user' for front
+                video: { facingMode: 'environment' }
             };
             try {
                 videoStream = await navigator.mediaDevices.getUserMedia(constraints);
@@ -303,11 +379,11 @@
             });
         }
 
-        // Step 3: Load the ML model (MobileNet for demo; replace with your custom model)
+        // Step 3: Load the ML model
         let model;
         async function loadModel() {
             try {
-                model = await mobilenet.load();  // Pre-trained MobileNet
+                model = await mobilenet.load();
                 console.log('Model loaded successfully');
             } catch (err) {
                 console.error('Model loading error:', err);
@@ -319,9 +395,8 @@
         document.getElementById('snap').addEventListener('click', async () => {
             const video = document.getElementById('video');
             const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = 'Identifying...'; // Loading indicator
+            resultDiv.innerHTML = 'Identifying...';
 
-            // Create canvas for capture
             const canvas = document.createElement('canvas');
             if (!video.videoWidth || !video.videoHeight) {
                 console.error('Video stream not ready');
@@ -332,14 +407,12 @@
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Display current thumbnail
             const thumbnail = document.getElementById('thumbnail');
             const thumbnailDataUrl = canvas.toDataURL('image/jpeg');
             thumbnail.src = thumbnailDataUrl;
-            thumbnail.style.display = 'block'; // Show thumbnail
+            thumbnail.style.display = 'block';
             console.log('Thumbnail captured');
 
-            // Run classification
             try {
                 if (!model) {
                     throw new Error('Model not loaded');
@@ -362,7 +435,6 @@
 
             if (predictions && predictions.length > 0) {
                 const topPrediction = predictions[0];
-                // Mock artifact database (keyed by className; in real life, use Firebase or JSON)
                 const artifactInfo = {
                     'vase': {
                         brief: 'Ancient Vase',
@@ -378,9 +450,9 @@
                     }
                 };
                 info = artifactInfo[topPrediction.className] || artifactInfo['default'];
-                resultDiv.innerHTML = info.full; // Main result shows full description
-                thumbnailDesc.innerHTML = info.brief; // Thumbnail shows brief description
-                detailedText.innerHTML = info.full; // Detailed view shows full description
+                resultDiv.innerHTML = info.full;
+                thumbnailDesc.innerHTML = info.brief;
+                detailedText.innerHTML = info.full;
             } else {
                 info = {
                     brief: 'No artifact detected',
@@ -391,12 +463,11 @@
                 detailedText.innerHTML = info.full;
             }
 
-            // Add to gallery
             const galleryItem = {
                 thumbnail: thumbnailDataUrl,
                 brief: info.brief,
                 full: info.full,
-                isFavorite: false // Default: not favorited
+                isFavorite: false
             };
             galleryItems.push(galleryItem);
             updateGallery();
@@ -407,8 +478,8 @@
             const gallery = document.getElementById('gallery');
             const galleryTitle = document.getElementById('gallery-title');
             const filter = document.getElementById('gallery-filter').value;
-            gallery.innerHTML = ''; // Clear existing gallery
-            galleryTitle.style.display = galleryItems.length > 0 ? 'block' : 'none'; // Show title after first thumbnail
+            gallery.innerHTML = '';
+            galleryTitle.style.display = galleryItems.length > 0 ? 'block' : 'none';
             const itemsToShow = filter === 'favorites' ? galleryItems.filter(item => item.isFavorite) : galleryItems;
 
             itemsToShow.forEach((item, index) => {
@@ -421,12 +492,12 @@
                         ${item.isFavorite ? '★' : '☆'}
                     </button>
                 `;
-                // Thumbnail click for detailed description
                 galleryItem.querySelector('img').addEventListener('click', () => {
                     const detailedDesc = document.getElementById('detailed-desc');
                     const detailedImg = document.getElementById('detailed-img');
                     const detailedText = document.getElementById('detailed-text');
                     const detailedFavorite = document.getElementById('detailed-favorite');
+                    const exploreFurther = document.getElementById('explore-further');
                     detailedImg.src = item.thumbnail;
                     detailedText.innerHTML = item.full;
                     detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
@@ -439,9 +510,9 @@
                         detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
                         detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
                     };
+                    exploreFurther.onclick = () => openChatModal(item);
                     detailedDesc.style.display = 'block';
                 });
-                // Favorite button click
                 galleryItem.querySelector('.favorite-btn').addEventListener('click', () => {
                     item.isFavorite = !item.isFavorite;
                     updateGallery();
@@ -456,6 +527,7 @@
             const detailedImg = document.getElementById('detailed-img');
             const detailedText = document.getElementById('detailed-text');
             const detailedFavorite = document.getElementById('detailed-favorite');
+            const exploreFurther = document.getElementById('explore-further');
             const latestItem = galleryItems[galleryItems.length - 1] || {
                 thumbnail: '',
                 full: 'No artifact available',
@@ -471,8 +543,9 @@
                 updateGallery();
                 detailedFavorite.className = `favorite-btn ${latestItem.isFavorite ? 'favorited' : ''}`;
                 detailedFavorite.setAttribute('aria-label', latestItem.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                detailedFavorite.innerHTML = latestItem.isFavorite ? '★' : '☆';
+                detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
             };
+            exploreFurther.onclick = () => openChatModal(latestItem);
             detailedDesc.style.display = 'block';
         });
 
@@ -485,6 +558,95 @@
         document.getElementById('gallery-filter').addEventListener('change', () => {
             updateGallery();
         });
+
+        // Step 10: Chat modal functionality
+        function openChatModal(item) {
+            const chatModal = document.getElementById('chat-modal');
+            const chatHistory = document.getElementById('chat-history');
+            chatHistory.innerHTML = `<div class="chat-message bot">Ask me anything about the ${item.brief}!</div>`;
+            chatModal.style.display = 'flex';
+
+            const chatSend = document.getElementById('chat-send');
+            const chatInput = document.getElementById('chat-input');
+            const voiceToggle = document.getElementById('voice-toggle');
+            const chatClose = document.getElementById('chat-close');
+
+            // Mock LLM response (replace with real API call in production)
+            function getLLMResponse(userInput, context) {
+                const fullContext = `Artifact: ${context.brief}. Description: ${context.full}. User question: ${userInput}`;
+                // Mock response for demo
+                return `Here's some info based on your question about the ${context.brief}: ${context.full} Want more details? Ask away! (Note: This is a mock response; integrate with xAI API at https://x.ai/api for real LLM functionality.)`;
+            }
+
+            // Text input handling
+            chatSend.onclick = () => {
+                const userInput = chatInput.value.trim();
+                if (userInput) {
+                    const userMessage = document.createElement('div');
+                    userMessage.className = 'chat-message user';
+                    userMessage.textContent = userInput;
+                    chatHistory.appendChild(userMessage);
+                    const botMessage = document.createElement('div');
+                    botMessage.className = 'chat-message bot';
+                    botMessage.textContent = getLLMResponse(userInput, item);
+                    chatHistory.appendChild(botMessage);
+                    chatHistory.scrollTop = chatHistory.scrollHeight;
+                    chatInput.value = '';
+                    if (isVoiceActive) {
+                        speak(botMessage.textContent);
+                    }
+                }
+            };
+
+            // Voice input handling
+            voiceToggle.onclick = () => {
+                if (!isVoiceActive) {
+                    try {
+                        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                        recognition.lang = 'en-US';
+                        recognition.onresult = (event) => {
+                            const transcript = event.results[0][0].transcript;
+                            chatInput.value = transcript;
+                            chatSend.click();
+                        };
+                        recognition.onerror = (err) => {
+                            console.error('Speech recognition error:', err);
+                            alert('Voice input not supported or failed. Try typing instead.');
+                        };
+                        recognition.start();
+                        voiceToggle.textContent = '🎙️';
+                        voiceToggle.setAttribute('aria-label', 'Stop voice input');
+                        isVoiceActive = true;
+                    } catch (err) {
+                        console.error('Speech recognition setup error:', err);
+                        alert('Voice input not supported on this device.');
+                    }
+                } else {
+                    recognition.stop();
+                    voiceToggle.textContent = '🎤';
+                    voiceToggle.setAttribute('aria-label', 'Start voice input');
+                    isVoiceActive = false;
+                }
+            };
+
+            // Voice output
+            function speak(text) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                window.speechSynthesis.speak(utterance);
+            }
+
+            // Close chat modal
+            chatClose.onclick = () => {
+                chatModal.style.display = 'none';
+                if (isVoiceActive) {
+                    recognition.stop();
+                    voiceToggle.textContent = '🎤';
+                    voiceToggle.setAttribute('aria-label', 'Start voice input');
+                    isVoiceActive = false;
+                }
+            };
+        }
 
         // Initialize everything
         async function init() {
