@@ -110,14 +110,71 @@
             font-size: 0.9rem;
             margin-top: 10px;
         }
-        #result {
+        #gallery {
             margin-top: 20px;
-            font-size: 1.1rem;
-            color: #ffffff;
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding: 10px;
+            scrollbar-width: thin;
+            scrollbar-color: #00c4b4 #333333;
+        }
+        #gallery::-webkit-scrollbar {
+            height: 8px;
+        }
+        #gallery::-webkit-scrollbar-thumb {
+            background: #00c4b4;
+            border-radius: 4px;
+        }
+        #gallery::-webkit-scrollbar-track {
             background: #333333;
-            padding: 15px;
+        }
+        .gallery-item {
+            flex: 0 0 auto;
+            text-align: center;
+        }
+        .gallery-item img {
+            max-width: 100px;
             border-radius: 8px;
-            line-height: 1.5;
+            box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
+            cursor: pointer;
+        }
+        .gallery-item div {
+            font-size: 0.8rem;
+            color: #cccccc;
+            margin-top: 5px;
+        }
+        .favorite-btn {
+            background: none;
+            border: none;
+            color: #cccccc;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 5px;
+            margin-top: 5px;
+        }
+        .favorite-btn.favorited {
+            color: #00c4b4;
+        }
+        .favorite-btn:hover {
+            color: #00c4b4;
+        }
+        #gallery-filter {
+            background: #333333;
+            color: #ffffff;
+            border: 1px solid #00c4b4;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        @media (min-width: 600px) {
+            #gallery {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                overflow-x: hidden;
+            }
         }
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; padding: 12px; }
@@ -126,6 +183,9 @@
             #thumbnail { max-width: 120px; }
             #thumbnail-desc { font-size: 0.8rem; }
             #detailed-desc { font-size: 0.9rem; }
+            .gallery-item img { max-width: 80px; }
+            .gallery-item div { font-size: 0.7rem; }
+            #gallery-filter { font-size: 0.9rem; padding: 6px; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -135,7 +195,7 @@
 </head>
 <body>
     <div class="container">
-        <h1><span>Denman Island Artifact Scanner</span></h1>
+        <h1><span>Denman Island Museum Artifact Scanner</span></h1>
         <p>Point your camera at an exhibit item and snap for epic lore. Mobile magic awaits!</p>
         <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
         <br>
@@ -147,9 +207,17 @@
             <button id="close-details" aria-label="Close detailed description">Close</button>
         </div>
         <div id="result" aria-live="polite"></div>
+        <select id="gallery-filter" aria-label="Filter gallery by all or favorites">
+            <option value="all">All</option>
+            <option value="favorites">Favorites</option>
+        </select>
+        <div id="gallery" aria-label="Gallery of previously scanned artifacts"></div>
     </div>
 
     <script>
+        // Store past snaps for gallery
+        let galleryItems = [];
+
         // Step 1: Access the camera (prefers rear on mobile for artifact scanning)
         async function setupCamera() {
             const video = document.getElementById('video');
@@ -195,9 +263,10 @@
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            // Display thumbnail
+            // Display current thumbnail
             const thumbnail = document.getElementById('thumbnail');
-            thumbnail.src = canvas.toDataURL('image/jpeg');
+            const thumbnailDataUrl = canvas.toDataURL('image/jpeg');
+            thumbnail.src = thumbnailDataUrl;
             thumbnail.style.display = 'block'; // Show thumbnail
             console.log('Thumbnail captured');
 
@@ -208,18 +277,20 @@
                 }
                 const predictions = await model.classify(canvas);
                 console.log('Predictions:', predictions);
-                displayResult(predictions);
+                displayResult(predictions, thumbnailDataUrl);
             } catch (err) {
                 console.error('Classification error:', err);
                 resultDiv.innerHTML = 'Error identifying artifact. Please try again!';
             }
         });
 
-        // Step 4: Display result, thumbnail description, and set up detailed description
-        function displayResult(predictions) {
+        // Step 4: Display result, thumbnail description, and add to gallery
+        function displayResult(predictions, thumbnailDataUrl) {
             const resultDiv = document.getElementById('result');
             const thumbnailDesc = document.getElementById('thumbnail-desc');
             const detailedText = document.getElementById('detailed-text');
+            let info;
+
             if (predictions && predictions.length > 0) {
                 const topPrediction = predictions[0];
                 // Mock artifact database (keyed by className; in real life, use Firebase or JSON)
@@ -237,26 +308,77 @@
                         full: `Hmm, looks like a ${topPrediction.className} with ${Math.round(topPrediction.probability * 100)}% confidence. Not in our collection? Try better lighting and snap again, you shadowy detective!`
                     }
                 };
-                const info = artifactInfo[topPrediction.className] || artifactInfo['default'];
+                info = artifactInfo[topPrediction.className] || artifactInfo['default'];
                 resultDiv.innerHTML = info.full; // Main result shows full description
                 thumbnailDesc.innerHTML = info.brief; // Thumbnail shows brief description
                 detailedText.innerHTML = info.full; // Detailed view shows full description
             } else {
+                info = {
+                    brief: 'No artifact detected',
+                    full: 'No detailed info available. Snap again!'
+                };
                 resultDiv.innerHTML = 'No predictions? Try better lighting, you shadowy detective!';
-                thumbnailDesc.innerHTML = 'No artifact detected';
-                detailedText.innerHTML = 'No detailed info available. Snap again!';
+                thumbnailDesc.innerHTML = info.brief;
+                detailedText.innerHTML = info.full;
             }
+
+            // Add to gallery
+            const galleryItem = {
+                thumbnail: thumbnailDataUrl,
+                brief: info.brief,
+                full: info.full,
+                isFavorite: false // Default: not favorited
+            };
+            galleryItems.push(galleryItem);
+            updateGallery();
         }
 
-        // Step 5: Toggle detailed description on thumbnail click
+        // Step 5: Update gallery display based on filter
+        function updateGallery() {
+            const gallery = document.getElementById('gallery');
+            const filter = document.getElementById('gallery-filter').value;
+            gallery.innerHTML = ''; // Clear existing gallery
+            const itemsToShow = filter === 'favorites' ? galleryItems.filter(item => item.isFavorite) : galleryItems;
+
+            itemsToShow.forEach((item, index) => {
+                const galleryItem = document.createElement('div');
+                galleryItem.className = 'gallery-item';
+                galleryItem.innerHTML = `
+                    <img src="${item.thumbnail}" alt="Gallery artifact ${index + 1}" aria-label="Click to view detailed artifact description">
+                    <div>${item.brief}</div>
+                    <button class="favorite-btn ${item.isFavorite ? 'favorited' : ''}" aria-label="${item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
+                        ${item.isFavorite ? '★' : '☆'}
+                    </button>
+                `;
+                // Thumbnail click for detailed description
+                galleryItem.querySelector('img').addEventListener('click', () => {
+                    const detailedDesc = document.getElementById('detailed-desc');
+                    document.getElementById('detailed-text').innerHTML = item.full;
+                    detailedDesc.style.display = 'block';
+                });
+                // Favorite button click
+                galleryItem.querySelector('.favorite-btn').addEventListener('click', () => {
+                    item.isFavorite = !item.isFavorite;
+                    updateGallery();
+                });
+                gallery.appendChild(galleryItem);
+            });
+        }
+
+        // Step 6: Toggle detailed description on current thumbnail click
         document.getElementById('thumbnail').addEventListener('click', () => {
             const detailedDesc = document.getElementById('detailed-desc');
             detailedDesc.style.display = detailedDesc.style.display === 'block' ? 'none' : 'block';
         });
 
-        // Step 6: Close detailed description
+        // Step 7: Close detailed description
         document.getElementById('close-details').addEventListener('click', () => {
             document.getElementById('detailed-desc').style.display = 'none';
+        });
+
+        // Step 8: Filter gallery on dropdown change
+        document.getElementById('gallery-filter').addEventListener('change', () => {
+            updateGallery();
         });
 
         // Initialize everything
