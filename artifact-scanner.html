@@ -138,6 +138,13 @@
         #snap:hover {
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
         }
+        #explore-further {
+            background: #00c4b4; /* Teal */
+            color: #1a1a1a;
+        }
+        #explore-further:hover {
+            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
+        }
         #detailed-desc {
             display: none;
             position: fixed;
@@ -163,6 +170,7 @@
             display: block;
             margin-left: auto;
             margin-right: auto;
+            position: relative; /* For absolute positioning of buttons */
         }
         #detailed-text {
             font-size: 1rem;
@@ -190,6 +198,30 @@
         }
         .favorite-btn:hover {
             color: #d4a017;
+        }
+        #close-details {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: transparent;
+            color: #ffffff;
+            font-size: 1.2rem;
+            padding: 5px;
+            border: none;
+            z-index: 3;
+        }
+        #close-details:hover {
+            color: #d4a017; /* Gold on hover */
+            transform: none; /* No scale to keep it subtle */
+            box-shadow: none;
+        }
+        #save-to-gallery {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(212, 160, 23, 0.9); /* Gold, slightly transparent */
+            z-index: 3;
         }
         #gallery-title {
             font-size: 1.4rem;
@@ -304,9 +336,12 @@
             p { font-size: 0.9rem; }
             button { font-size: 0.8rem; padding: 8px 16px; }
             #snap { font-size: 0.8rem; padding: 8px 16px; }
+            #explore-further { font-size: 0.8rem; padding: 8px 16px; }
             #detailed-img { max-width: 320px; }
             #detailed-text { font-size: 0.9rem; }
             .favorite-btn { font-size: 0.8rem; padding: 8px; }
+            #close-details { font-size: 1rem; padding: 4px; }
+            #save-to-gallery { font-size: 0.8rem; padding: 8px 16px; }
             #gallery-title { font-size: 1.2rem; }
             #gallery-filter { font-size: 0.8rem; padding: 6px; }
             #zoom-control label { font-size: 0.7rem; }
@@ -336,13 +371,15 @@
         <button id="snap" aria-label="Capture photo and identify artifact">Snap & Identify</button>
         <div id="result" aria-live="polite"></div>
         <div id="detailed-desc" aria-live="polite">
-            <img id="detailed-img" alt="Captured artifact thumbnail">
+            <div style="position: relative;">
+                <img id="detailed-img" alt="Captured artifact thumbnail">
+                <button id="close-details" aria-label="Close detailed description">X</button>
+                <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
+            </div>
             <div id="detailed-text"></div>
             <div id="detailed-buttons">
                 <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
-                <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
                 <button id="explore-further" aria-label="Explore further with AI chat">Explore Further</button>
-                <button id="close-details" aria-label="Close detailed description">Close</button>
             </div>
         </div>
         <div id="filter-container">
@@ -528,9 +565,9 @@
                 detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
             };
 
-            saveToGallery.style.display = galleryItems.includes(latestSnap) ? 'none' : 'inline-block';
+            saveToGallery.style.display = galleryItems.some(item => item.thumbnail === latestSnap.thumbnail) ? 'none' : 'inline-block';
             saveToGallery.onclick = () => {
-                if (!galleryItems.includes(latestSnap)) {
+                if (!galleryItems.some(item => item.thumbnail === latestSnap.thumbnail)) {
                     galleryItems.push(latestSnap);
                     updateGallery();
                     saveToGallery.style.display = 'none';
