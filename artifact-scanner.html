@@ -666,7 +666,7 @@
             // xAI API integration (via proxy to secure API key)
             async function getLLMResponse(userInput, context) {
                 try {
-                    const response = await fetch('https://museum-scanner.vercel.app/api/xai', {
+                    const response = await fetch('https://museum-scanner-v2.vercel.app/api/xai', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -774,6 +774,7 @@
     </script>
 </body>
 </html>
+
 
 
 
