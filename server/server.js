@@ -12,6 +12,8 @@ app.use(express.json());
 
 app.post('/api/xai', async (req, res) => {
   try {
+    console.log('Incoming request body:', req.body);
+    console.log('Authorization header:', `Bearer ${process.env.XAI_API_KEY}`); // Debug header
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
