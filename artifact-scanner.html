@@ -117,7 +117,7 @@
             background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
             color: #1a1a1a;
             padding: 9.6px 19.2px; /* 20% smaller */
-            border: none;
+            border: 1px solid #d4a017; /* Gold outline, full opacity */
             border-radius: 8px;
             font-size: 0.88rem; /* 20% smaller */
             font-weight: 600;
@@ -131,6 +131,7 @@
         }
         #snap {
             background: rgba(0, 196, 180, 0.5); /* Teal, 50% opacity */
+            border: 1px solid #00c4b4; /* Teal outline, full opacity */
             color: #1a1a1a;
             padding: 9.6px 19.2px;
             font-size: 0.88rem;
@@ -140,18 +141,11 @@
         }
         #explore-further {
             background: rgba(0, 196, 180, 0.5); /* Teal, 50% opacity */
+            border: 1px solid #00c4b4; /* Teal outline, full opacity */
             color: #1a1a1a;
         }
         #explore-further:hover {
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
-        }
-        #save-to-gallery {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
-            z-index: 3;
         }
         #detailed-desc {
             display: none;
@@ -194,7 +188,7 @@
         }
         .favorite-btn {
             background: none;
-            border: none;
+            border: none; /* No outline */
             color: #cccccc;
             font-size: 0.88rem;
             cursor: pointer;
@@ -212,10 +206,10 @@
             top: 5px;
             right: 5px;
             background: rgba(37, 37, 37, 0.7); /* Match zoom-control */
+            border: none; /* No outline */
             color: #ffffff;
             font-size: 1.2rem;
             padding: 5px;
-            border: none;
             border-radius: 4px;
             z-index: 3;
         }
@@ -329,46 +323,33 @@
             gap: 10px;
             margin-top: 10px;
         }
-        #chat-send, #voice-toggle {
+        #chat-send, #voice-toggle, #chat-close {
             padding: 9.6px 19.2px; /* 20% smaller */
             background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
+            border: 1px solid #d4a017; /* Gold outline, full opacity */
             font-size: 0.88rem; /* 20% smaller */
         }
-        #chat-send:hover, #voice-toggle:hover {
+        #chat-send:hover, #voice-toggle:hover, #chat-close:hover {
             box-shadow: 0 0 15px rgba(212, 160, 23, 0.7); /* Gold glow */
-        }
-        #chat-close {
-            background: rgba(37, 37, 37, 0.7); /* Match close-details */
-            color: #ffffff;
-            font-size: 1.2rem;
-            padding: 5px;
-            border: none;
-            border-radius: 4px;
-        }
-        #chat-close:hover {
-            color: #d4a017; /* Gold on hover */
-            transform: none; /* No scale to keep it subtle */
-            box-shadow: none;
         }
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; padding: 12px; }
             p { font-size: 0.9rem; }
-            button { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); }
-            #snap { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); }
-            #explore-further { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); }
-            #save-to-gallery { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); }
+            button { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); border: 1px solid #d4a017; }
+            #snap { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); border: 1px solid #00c4b4; }
+            #explore-further { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); border: 1px solid #00c4b4; }
+            #save-to-gallery { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); border: 1px solid #d4a017; }
             #detailed-img { max-width: 320px; }
             #detailed-text { font-size: 0.9rem; }
-            .favorite-btn { font-size: 0.8rem; padding: 8px; }
-            #close-details { font-size: 1rem; padding: 4px; }
+            .favorite-btn { font-size: 0.8rem; padding: 8px; border: none; }
+            #close-details { font-size: 1rem; padding: 4px; border: none; }
             #gallery-title { font-size: 1.2rem; }
             #gallery-filter { font-size: 0.8rem; padding: 6px; }
             #zoom-control label { font-size: 0.7rem; }
             #zoom-slider { /* Dynamic height set via JS */ }
             #chat-container { max-width: 95%; }
             #chat-input { width: calc(100% - 12px); } /* Full width minus padding */
-            #chat-send, #voice-toggle { padding: 8px 16px; font-size: 0.8rem; background: rgba(212, 160, 23, 0.5); }
-            #chat-close { font-size: 1rem; padding: 4px; }
+            #chat-send, #voice-toggle, #chat-close { padding: 8px 16px; font-size: 0.8rem; background: rgba(212, 160, 23, 0.5); border: 1px solid #d4a017; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -393,12 +374,12 @@
             <div style="position: relative;">
                 <img id="detailed-img" alt="Captured artifact thumbnail">
                 <button id="close-details" aria-label="Close detailed description">X</button>
-                <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
             </div>
             <div id="detailed-text"></div>
             <div id="detailed-buttons">
                 <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
                 <button id="explore-further" aria-label="Explore further with AI chat">Explore Further</button>
+                <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
             </div>
         </div>
         <div id="filter-container">
@@ -417,7 +398,7 @@
             <div id="chat-buttons">
                 <button id="chat-send" aria-label="Send chat message">Send</button>
                 <button id="voice-toggle" aria-label="Toggle voice input">🎤</button>
-                <button id="chat-close" aria-label="Close chat">X</button>
+                <button id="chat-close" aria-label="Close chat">Close</button>
             </div>
         </div>
     </div>
