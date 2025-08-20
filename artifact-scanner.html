@@ -666,7 +666,7 @@
             // xAI API integration (via proxy to secure API key)
             async function getLLMResponse(userInput, context) {
                 try {
-                    const response = await fetch('https://museum-scanner.onrender.com', {
+                    const response = await fetch('https://museum-scanner-server.onrender.com', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -776,4 +776,5 @@
     </script>
 </body>
 </html>
+
 
