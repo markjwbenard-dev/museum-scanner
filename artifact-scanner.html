@@ -315,21 +315,40 @@
             text-align: left;
         }
         #chat-input {
-            width: calc(100% - 90px);
+            width: calc(100% - 16px); /* Full width minus padding */
             padding: 8px;
             border: 1px solid #d4a017; /* Golden border */
             border-radius: 8px;
             background: #333333;
             color: #ffffff;
+            margin-bottom: 10px;
         }
-        #chat-send, #voice-toggle, #chat-close {
+        #chat-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #chat-send, #voice-toggle {
             padding: 9.6px 19.2px; /* 20% smaller */
-            margin-left: 5px;
             background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
             font-size: 0.88rem; /* 20% smaller */
         }
-        #chat-send:hover, #voice-toggle:hover, #chat-close:hover {
+        #chat-send:hover, #voice-toggle:hover {
             box-shadow: 0 0 15px rgba(212, 160, 23, 0.7); /* Gold glow */
+        }
+        #chat-close {
+            background: rgba(37, 37, 37, 0.7); /* Match close-details */
+            color: #ffffff;
+            font-size: 1.2rem;
+            padding: 5px;
+            border: none;
+            border-radius: 4px;
+        }
+        #chat-close:hover {
+            color: #d4a017; /* Gold on hover */
+            transform: none; /* No scale to keep it subtle */
+            box-shadow: none;
         }
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; padding: 12px; }
@@ -347,12 +366,9 @@
             #zoom-control label { font-size: 0.7rem; }
             #zoom-slider { /* Dynamic height set via JS */ }
             #chat-container { max-width: 95%; }
-            #chat-input { width: calc(100% - 80px); }
-            #chat-send, #voice-toggle, #chat-close {
-                padding: 8px 16px;
-                font-size: 0.8rem;
-                background: rgba(212, 160, 23, 0.5);
-            }
+            #chat-input { width: calc(100% - 12px); } /* Full width minus padding */
+            #chat-send, #voice-toggle { padding: 8px 16px; font-size: 0.8rem; background: rgba(212, 160, 23, 0.5); }
+            #chat-close { font-size: 1rem; padding: 4px; }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -398,9 +414,11 @@
         <div id="chat-container">
             <div id="chat-history" aria-live="polite"></div>
             <input id="chat-input" type="text" placeholder="Ask about the artifact..." aria-label="Enter your question about the artifact">
-            <button id="chat-send" aria-label="Send chat message">Send</button>
-            <button id="voice-toggle" aria-label="Toggle voice input">🎤</button>
-            <button id="chat-close" aria-label="Close chat">Close</button>
+            <div id="chat-buttons">
+                <button id="chat-send" aria-label="Send chat message">Send</button>
+                <button id="voice-toggle" aria-label="Toggle voice input">🎤</button>
+                <button id="chat-close" aria-label="Close chat">X</button>
+            </div>
         </div>
     </div>
 
