@@ -114,7 +114,7 @@
             height: 20px;
         }
         button {
-            background: #d4a017; /* Golden hue */
+            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
             color: #1a1a1a;
             padding: 9.6px 19.2px; /* 20% smaller */
             border: none;
@@ -130,7 +130,7 @@
             box-shadow: 0 0 15px rgba(212, 160, 23, 0.7); /* Gold glow */
         }
         #snap {
-            background: #00c4b4; /* Teal */
+            background: rgba(0, 196, 180, 0.5); /* Teal, 50% opacity */
             color: #1a1a1a;
             padding: 9.6px 19.2px;
             font-size: 0.88rem;
@@ -139,11 +139,19 @@
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
         }
         #explore-further {
-            background: #00c4b4; /* Teal */
+            background: rgba(0, 196, 180, 0.5); /* Teal, 50% opacity */
             color: #1a1a1a;
         }
         #explore-further:hover {
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
+        }
+        #save-to-gallery {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
+            z-index: 3;
         }
         #detailed-desc {
             display: none;
@@ -203,25 +211,18 @@
             position: absolute;
             top: 5px;
             right: 5px;
-            background: transparent;
+            background: rgba(37, 37, 37, 0.7); /* Match zoom-control */
             color: #ffffff;
             font-size: 1.2rem;
             padding: 5px;
             border: none;
+            border-radius: 4px;
             z-index: 3;
         }
         #close-details:hover {
             color: #d4a017; /* Gold on hover */
             transform: none; /* No scale to keep it subtle */
             box-shadow: none;
-        }
-        #save-to-gallery {
-            position: absolute;
-            bottom: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(212, 160, 23, 0.9); /* Gold, slightly transparent */
-            z-index: 3;
         }
         #gallery-title {
             font-size: 1.4rem;
@@ -255,6 +256,7 @@
             margin-top: 5px;
         }
         #filter-container {
+            display: none; /* Hidden until gallery has items */
             text-align: right;
             padding: 0 10px;
             margin-top: 20px;
@@ -303,7 +305,7 @@
             border-radius: 4px;
         }
         .chat-message.user {
-            background: #d4a017; /* Golden hue */
+            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
             color: #1a1a1a;
             text-align: right;
         }
@@ -320,36 +322,37 @@
             background: #333333;
             color: #ffffff;
         }
-        #chat-send, #voice-toggle {
+        #chat-send, #voice-toggle, #chat-close {
             padding: 9.6px 19.2px; /* 20% smaller */
             margin-left: 5px;
+            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
             font-size: 0.88rem; /* 20% smaller */
         }
-        #chat-close {
-            background: #d4a017; /* Golden hue */
-            padding: 9.6px 19.2px;
-            font-size: 0.88rem;
-            margin-top: 10px;
+        #chat-send:hover, #voice-toggle:hover, #chat-close:hover {
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.7); /* Gold glow */
         }
         @media (max-width: 600px) {
             h1 { font-size: 1.5rem; padding: 12px; }
             p { font-size: 0.9rem; }
-            button { font-size: 0.8rem; padding: 8px 16px; }
-            #snap { font-size: 0.8rem; padding: 8px 16px; }
-            #explore-further { font-size: 0.8rem; padding: 8px 16px; }
+            button { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); }
+            #snap { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); }
+            #explore-further { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); }
+            #save-to-gallery { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); }
             #detailed-img { max-width: 320px; }
             #detailed-text { font-size: 0.9rem; }
             .favorite-btn { font-size: 0.8rem; padding: 8px; }
             #close-details { font-size: 1rem; padding: 4px; }
-            #save-to-gallery { font-size: 0.8rem; padding: 8px 16px; }
             #gallery-title { font-size: 1.2rem; }
             #gallery-filter { font-size: 0.8rem; padding: 6px; }
             #zoom-control label { font-size: 0.7rem; }
             #zoom-slider { /* Dynamic height set via JS */ }
             #chat-container { max-width: 95%; }
             #chat-input { width: calc(100% - 80px); }
-            #chat-send, #voice-toggle { padding: 8px 16px; font-size: 0.8rem; }
-            #chat-close { padding: 8px 16px; font-size: 0.8rem; }
+            #chat-send, #voice-toggle, #chat-close {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+                background: rgba(212, 160, 23, 0.5);
+            }
         }
     </style>
     <!-- Load TensorFlow.js library -->
@@ -587,9 +590,11 @@
         function updateGallery() {
             const gallery = document.getElementById('gallery');
             const galleryTitle = document.getElementById('gallery-title');
+            const filterContainer = document.getElementById('filter-container');
             const filter = document.getElementById('gallery-filter').value;
             gallery.innerHTML = '';
             galleryTitle.style.display = galleryItems.length > 0 ? 'block' : 'none';
+            filterContainer.style.display = galleryItems.length > 0 ? 'block' : 'none';
             const itemsToShow = filter === 'favorites' ? galleryItems.filter(item => item.isFavorite) : galleryItems;
 
             itemsToShow.forEach((item, index) => {
@@ -766,6 +771,7 @@
         async function init() {
             await setupCamera();
             await loadModel();
+            document.getElementById('filter-container').style.display = 'none'; // Hide filter initially
         }
         init();
     </script>
