@@ -1,36 +1,39 @@
 ```javascript
-  require('dotenv').config();
-  const express = require('express');
-  const fetch = require('node-fetch');
-  const cors = require('cors');
-  const app = express();
-  const port = process.env.PORT || 3000;
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const fetch = require('node-fetch');
 
-  app.use(cors()); // Allow requests from GitHub Pages
-  app.use(express.json());
+const app = express();
+const port = process.env.PORT || 3000;
 
-  app.post('/api/xai', async (req, res) => {
-      try {
-          const response = await fetch('https://api.x.ai/v1/chat/completions', {
-              method: 'POST',
-              headers: {
-                  'Authorization': `Bearer ${process.env.XAI_API_KEY}`,
-                  'Content-Type': 'application/json'
-              },
-              body: JSON.stringify(req.body)
-          });
-          if (!response.ok) {
-              throw new Error(`xAI API error: ${response.status} - ${response.statusText}`);
-          }
-          const data = await response.json();
-          res.json(data);
-      } catch (err) {
-          console.error('Proxy error:', err);
-          res.status(500).json({ error: `Grok's having a bad day: ${err.message}` });
-      }
-  });
+app.use(cors());
+app.use(express.json());
 
-  app.listen(port, () => {
-      console.log(`Server rocking on port ${port} – ready to channel Grok's wisdom!`);
-  });
-  ```
+app.post('/api/xai', async (req, res) => {
+  try {
+    const response = await fetch('https://api.x.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.XAI_API_KEY}`
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    if (!response.ok) {
+      throw new Error(`xAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('Server error:', error);
+    res.status(500).json({ error: 'Internal server error', details: error.message });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
+```
