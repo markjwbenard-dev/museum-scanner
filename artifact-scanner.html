@@ -93,7 +93,8 @@
         #zoom-slider {
             writing-mode: bt-lr;
             -webkit-appearance: slider-vertical;
-            height: 240px; /* 80% of ~300px video height */
+            height: calc(80% - 30px); /* 80% of video height, minus label and padding */
+            max-height: calc(100% - 30px); /* Prevent overflow */
             width: 20px;
             background: #333333;
             border: 1px solid #00c4b4;
@@ -137,24 +138,40 @@
         #snap:hover {
             box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
         }
-        #thumbnail {
-            margin-top: 10px;
+        #detailed-desc {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #252525;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.3); /* Gold glow */
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+            z-index: 1000;
+            text-align: center;
+        }
+        #detailed-img {
             width: 100%;
-            max-width: 400px; /* Match video size */
+            max-width: 400px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
-            display: none;
+            margin-bottom: 10px;
+            display: block;
             margin-left: auto;
             margin-right: auto;
         }
-        #thumbnail-desc {
-            font-size: 0.9rem;
-            color: #cccccc;
-            margin-top: 5px;
+        #detailed-text {
+            font-size: 1rem;
+            color: #ffffff;
             margin-bottom: 10px;
+            line-height: 1.5;
         }
-        #thumbnail-buttons {
-            display: none; /* Hidden until thumbnail appears */
+        #detailed-buttons {
+            display: flex;
             justify-content: center;
             gap: 10px;
             margin-top: 10px;
@@ -163,7 +180,7 @@
             background: none;
             border: none;
             color: #cccccc;
-            font-size: 0.88rem; /* Match button size */
+            font-size: 0.88rem;
             cursor: pointer;
             padding: 9.6px;
             margin: 10px 5px;
@@ -173,16 +190,6 @@
         }
         .favorite-btn:hover {
             color: #d4a017;
-        }
-        #thumbnail-explore, #thumbnail-close {
-            background: transparent;
-            border: 1px solid #d4a017; /* Thin gold outline */
-            color: #d4a017; /* Gold text */
-            padding: 9.6px 19.2px;
-            font-size: 0.88rem;
-        }
-        #thumbnail-explore:hover, #thumbnail-close:hover {
-            box-shadow: 0 0 10px rgba(212, 160, 23, 0.5); /* Subtle gold glow */
         }
         #gallery-title {
             font-size: 1.4rem;
@@ -297,17 +304,13 @@
             p { font-size: 0.9rem; }
             button { font-size: 0.8rem; padding: 8px 16px; }
             #snap { font-size: 0.8rem; padding: 8px 16px; }
-            #thumbnail { max-width: 320px; } /* Match mobile video */
-            #thumbnail-desc { font-size: 0.8rem; }
-            .gallery-item { max-width: 80px; }
-            .gallery-item img { max-width: 80px; }
-            .gallery-item div { font-size: 0.7rem; }
+            #detailed-img { max-width: 320px; }
+            #detailed-text { font-size: 0.9rem; }
             .favorite-btn { font-size: 0.8rem; padding: 8px; }
-            #thumbnail-explore, #thumbnail-close { font-size: 0.8rem; padding: 8px 16px; }
             #gallery-title { font-size: 1.2rem; }
             #gallery-filter { font-size: 0.8rem; padding: 6px; }
             #zoom-control label { font-size: 0.7rem; }
-            #zoom-slider { height: 200px; } /* 80% of ~250px video height */
+            #zoom-slider { /* Dynamic height set via JS */ }
             #chat-container { max-width: 95%; }
             #chat-input { width: calc(100% - 80px); }
             #chat-send, #voice-toggle { padding: 8px 16px; font-size: 0.8rem; }
@@ -331,14 +334,17 @@
             </div>
         </div>
         <button id="snap" aria-label="Capture photo and identify artifact">Snap & Identify</button>
-        <img id="thumbnail" alt="Captured artifact thumbnail" aria-label="Captured artifact image">
-        <div id="thumbnail-desc" aria-live="polite"></div>
-        <div id="thumbnail-buttons">
-            <button id="thumbnail-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
-            <button id="thumbnail-explore" aria-label="Explore further with AI chat">Explore Further</button>
-            <button id="thumbnail-close" aria-label="Clear artifact image and description">Close</button>
-        </div>
         <div id="result" aria-live="polite"></div>
+        <div id="detailed-desc" aria-live="polite">
+            <img id="detailed-img" alt="Captured artifact thumbnail">
+            <div id="detailed-text"></div>
+            <div id="detailed-buttons">
+                <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
+                <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
+                <button id="explore-further" aria-label="Explore further with AI chat">Explore Further</button>
+                <button id="close-details" aria-label="Close detailed description">Close</button>
+            </div>
+        </div>
         <div id="filter-container">
             <select id="gallery-filter" aria-label="Filter gallery by all or favorites">
                 <option value="all">All</option>
@@ -377,9 +383,24 @@
                 video.srcObject = videoStream;
                 console.log('Camera initialized successfully');
                 setupZoom();
+                // Adjust zoom slider height dynamically
+                adjustZoomSliderHeight();
+                window.addEventListener('resize', adjustZoomSliderHeight);
             } catch (err) {
                 console.error('Camera access error:', err);
                 alert('Oops! Camera access needed for scanning. Please check permissions and try again.');
+            }
+        }
+
+        // Adjust zoom slider height to 80% of video height
+        function adjustZoomSliderHeight() {
+            const video = document.getElementById('video');
+            const zoomSlider = document.getElementById('zoom-slider');
+            const videoHeight = video.getBoundingClientRect().height;
+            if (videoHeight > 0) {
+                const sliderHeight = videoHeight * 0.8 - 30; // 80% minus label and padding
+                zoomSlider.style.height = `${sliderHeight}px`;
+                console.log(`Zoom slider height set to ${sliderHeight}px`);
             }
         }
 
@@ -414,7 +435,7 @@
             }
         }
 
-        // Step 4: Capture image from video, show thumbnail, and classify
+        // Step 4: Capture image from video and show in popup
         document.getElementById('snap').addEventListener('click', async () => {
             const video = document.getElementById('video');
             const resultDiv = document.getElementById('result');
@@ -430,10 +451,7 @@
             canvas.height = video.videoHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
 
-            const thumbnail = document.getElementById('thumbnail');
             const thumbnailDataUrl = canvas.toDataURL('image/jpeg');
-            thumbnail.src = thumbnailDataUrl;
-            thumbnail.style.display = 'block';
             console.log('Thumbnail captured');
 
             try {
@@ -449,11 +467,16 @@
             }
         });
 
-        // Step 5: Display result, thumbnail description, and store latest snap
+        // Step 5: Display result in popup
         function displayResult(predictions, thumbnailDataUrl) {
             const resultDiv = document.getElementById('result');
-            const thumbnailDesc = document.getElementById('thumbnail-desc');
-            const thumbnailButtons = document.getElementById('thumbnail-buttons');
+            const detailedDesc = document.getElementById('detailed-desc');
+            const detailedImg = document.getElementById('detailed-img');
+            const detailedText = document.getElementById('detailed-text');
+            const detailedFavorite = document.getElementById('detailed-favorite');
+            const saveToGallery = document.getElementById('save-to-gallery');
+            const exploreFurther = document.getElementById('explore-further');
+            const closeDetails = document.getElementById('close-details');
             let info;
 
             if (predictions && predictions.length > 0) {
@@ -473,15 +496,15 @@
                     }
                 };
                 info = artifactInfo[topPrediction.className] || artifactInfo['default'];
-                resultDiv.innerHTML = info.full;
-                thumbnailDesc.innerHTML = info.brief;
+                resultDiv.innerHTML = '';
+                detailedText.innerHTML = info.full;
             } else {
                 info = {
                     brief: 'No artifact detected',
                     full: 'No detailed info available. Snap again!'
                 };
                 resultDiv.innerHTML = 'No predictions? Try better lighting, you shadowy detective!';
-                thumbnailDesc.innerHTML = info.brief;
+                detailedText.innerHTML = info.full;
             }
 
             // Store latest snap
@@ -492,33 +515,35 @@
                 isFavorite: false
             };
 
-            // Set up thumbnail buttons
-            const favoriteBtn = document.getElementById('thumbnail-favorite');
-            const exploreBtn = document.getElementById('thumbnail-explore');
-            const closeBtn = document.getElementById('thumbnail-close');
-
-            favoriteBtn.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-            favoriteBtn.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-            favoriteBtn.innerHTML = latestSnap.isFavorite ? '★' : '☆';
-            favoriteBtn.onclick = () => {
+            // Set up popup
+            detailedImg.src = thumbnailDataUrl;
+            detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
+            detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+            detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
+            detailedFavorite.onclick = () => {
                 latestSnap.isFavorite = !latestSnap.isFavorite;
                 updateGallery();
-                favoriteBtn.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-                favoriteBtn.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                favoriteBtn.innerHTML = latestSnap.isFavorite ? '★' : '☆';
+                detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
+                detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
             };
 
-            exploreBtn.onclick = () => openChatModal(latestSnap);
-            closeBtn.onclick = () => {
-                thumbnail.src = '';
-                thumbnail.style.display = 'none';
-                thumbnailDesc.innerHTML = '';
-                resultDiv.innerHTML = '';
-                thumbnailButtons.style.display = 'none';
+            saveToGallery.style.display = galleryItems.includes(latestSnap) ? 'none' : 'inline-block';
+            saveToGallery.onclick = () => {
+                if (!galleryItems.includes(latestSnap)) {
+                    galleryItems.push(latestSnap);
+                    updateGallery();
+                    saveToGallery.style.display = 'none';
+                }
+            };
+
+            exploreFurther.onclick = () => openChatModal(latestSnap);
+            closeDetails.onclick = () => {
+                detailedDesc.style.display = 'none';
                 latestSnap = null;
             };
 
-            thumbnailButtons.style.display = 'flex';
+            detailedDesc.style.display = 'block';
         }
 
         // Step 6: Update gallery display based on filter
@@ -541,41 +566,35 @@
                     </button>
                 `;
                 galleryItem.querySelector('img').addEventListener('click', () => {
-                    const thumbnail = document.getElementById('thumbnail');
-                    const thumbnailDesc = document.getElementById('thumbnail-desc');
-                    const resultDiv = document.getElementById('result');
-                    const thumbnailButtons = document.getElementById('thumbnail-buttons');
-                    const favoriteBtn = document.getElementById('thumbnail-favorite');
-                    const exploreBtn = document.getElementById('thumbnail-explore');
-                    const closeBtn = document.getElementById('thumbnail-close');
+                    const detailedDesc = document.getElementById('detailed-desc');
+                    const detailedImg = document.getElementById('detailed-img');
+                    const detailedText = document.getElementById('detailed-text');
+                    const detailedFavorite = document.getElementById('detailed-favorite');
+                    const saveToGallery = document.getElementById('save-to-gallery');
+                    const exploreFurther = document.getElementById('explore-further');
+                    const closeDetails = document.getElementById('close-details');
 
-                    thumbnail.src = item.thumbnail;
-                    thumbnail.style.display = 'block';
-                    thumbnailDesc.innerHTML = item.brief;
-                    resultDiv.innerHTML = item.full;
-                    thumbnailButtons.style.display = 'flex';
-
-                    favoriteBtn.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-                    favoriteBtn.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                    favoriteBtn.innerHTML = item.isFavorite ? '★' : '☆';
-                    favoriteBtn.onclick = () => {
+                    detailedImg.src = item.thumbnail;
+                    detailedText.innerHTML = item.full;
+                    detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+                    detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                    detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
+                    detailedFavorite.onclick = () => {
                         item.isFavorite = !item.isFavorite;
                         updateGallery();
-                        favoriteBtn.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-                        favoriteBtn.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                        favoriteBtn.innerHTML = item.isFavorite ? '★' : '☆';
+                        detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+                        detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
+                        detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
                     };
 
-                    exploreBtn.onclick = () => openChatModal(item);
-                    closeBtn.onclick = () => {
-                        thumbnail.src = '';
-                        thumbnail.style.display = 'none';
-                        thumbnailDesc.innerHTML = '';
-                        resultDiv.innerHTML = '';
-                        thumbnailButtons.style.display = 'none';
+                    saveToGallery.style.display = 'none'; // Already in gallery
+                    exploreFurther.onclick = () => openChatModal(item);
+                    closeDetails.onclick = () => {
+                        detailedDesc.style.display = 'none';
                         latestSnap = null;
                     };
 
+                    detailedDesc.style.display = 'block';
                     latestSnap = item;
                 });
                 galleryItem.querySelector('.favorite-btn').addEventListener('click', () => {
