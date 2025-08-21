@@ -8,5 +8,3 @@
   to = "/.netlify/functions/xai"
   status = 200
   force = true
-
-
