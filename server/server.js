@@ -1,16 +1,15 @@
 ```javascript
 require('dotenv').config();
 const express = require('express');
+const serverless = require('serverless-http');
 const cors = require('cors');
 const fetch = require('node-fetch');
 
 const app = express();
-const port = process.env.PORT || 3000;
-
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/xai', async (req, res) => {
+app.post('/xai', async (req, res) => {
   try {
     console.log('Incoming request body:', req.body);
     console.log('Authorization header:', `Bearer ${process.env.XAI_API_KEY}`);
@@ -35,7 +34,5 @@ app.post('/api/xai', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+module.exports.handler = serverless(app);
 ```
