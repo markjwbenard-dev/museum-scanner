@@ -4,8 +4,9 @@
   publish = "."
 
 [[redirects]]
-  from = "/functions/xai"
+  from = "/api/xai"
   to = "/.netlify/functions/xai"
   status = 200
   force = true
+
 
