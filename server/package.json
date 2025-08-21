@@ -7,7 +7,7 @@
     "start": "node functions/xai.js"
   },
   "keywords": ["museum", "scanner", "xai"],
-  "author": "Mark Benard",
+  "author": "Your Name",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
