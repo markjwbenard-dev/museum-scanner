@@ -2,7 +2,7 @@
   "name": "museum-scanner-server",
   "version": "1.0.0",
   "description": "Proxy server for Denman Island Museum artifact scanner",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
@@ -13,9 +13,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "node-fetch": "^3.3.2"
-  },
-  "engines": {
-    "node": "22.x"
+    "node-fetch": "^3.3.2" 
   }
 }
