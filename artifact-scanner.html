@@ -666,7 +666,7 @@
             // xAI API integration (via proxy to secure API key)
             async function getLLMResponse(userInput, context) {
                 try {
-const response = await fetch('https://museum-artifact-scanner.netlify.app/functions/xai', {
+const response = await fetch('https://museum-artifact-scanner.netlify.app/.netlify/functions/xai', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json'
@@ -774,6 +774,7 @@ const response = await fetch('https://museum-artifact-scanner.netlify.app/functi
     </script>
 </body>
 </html>
+
 
 
 
