@@ -1,0 +1,10 @@
+[build]
+  command = "npm install"
+  functions = "functions"
+  publish = "."
+
+[[redirects]]
+  from = "/api/xai"
+  to = "/.netlify/functions/xai"
+  status = 200
+  force = true
