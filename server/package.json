@@ -1,15 +1,19 @@
 {
-  "name": "museum-scanner",
+  "name": "museum-scanner-server",
   "version": "1.0.0",
-  "description": "Denman Island Museum artifact scanner",
+  "description": "Proxy server for Denman Island Museum artifact scanner",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "keywords": ["museum", "scanner", "xai"],
   "author": "Your Name",
   "license": "ISC",
   "dependencies": {
-    "node-fetch": "^2.6.7"
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": "18.x"
   }
 }
