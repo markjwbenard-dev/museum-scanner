@@ -1,10 +1,11 @@
 ```javascript
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 
-exports.handler = async function (event, context) {
+export async function handler(event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ error: 'Method not allowed' })
     };
   }
@@ -17,7 +18,7 @@ exports.handler = async function (event, context) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.XAI_API_KEY}`
+        'Authorization': `Bearer ${process.env.XAI_API_KEY}` // Backticks confirmed
       },
       body: JSON.stringify(body)
     });
@@ -29,14 +30,16 @@ exports.handler = async function (event, context) {
     const data = await response.json();
     return {
       statusCode: 200,
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify(data)
     };
   } catch (error) {
     console.error('Server error:', error);
     return {
       statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({ error: 'Internal server error', details: error.message })
     };
   }
-};
+}
 ```
