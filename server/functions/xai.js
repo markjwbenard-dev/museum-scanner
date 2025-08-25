@@ -1,17 +1,17 @@
 ```javascript
-require('dotenv').config();
-const express = require('express');
-const serverless = require('serverless-http');
-const cors = require('cors');
 const fetch = require('node-fetch');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+exports.handler = async function (event, context) {
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      body: JSON.stringify({ error: 'Method not allowed' })
+    };
+  }
 
-app.post('/xai', async (req, res) => {
   try {
-    console.log('Incoming request body:', req.body);
+    const body = JSON.parse(event.body);
+    console.log('Incoming request body:', body);
     console.log('Authorization header:', `Bearer ${process.env.XAI_API_KEY}`);
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
@@ -19,7 +19,7 @@ app.post('/xai', async (req, res) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${process.env.XAI_API_KEY}`
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify(body)
     });
 
     if (!response.ok) {
@@ -27,12 +27,16 @@ app.post('/xai', async (req, res) => {
     }
 
     const data = await response.json();
-    res.json(data);
+    return {
+      statusCode: 200,
+      body: JSON.stringify(data)
+    };
   } catch (error) {
     console.error('Server error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: 'Internal server error', details: error.message })
+    };
   }
-});
-
-module.exports.handler = serverless(app);
+};
 ```
