@@ -1,7 +1,7 @@
 ```javascript
-import fetch from 'node-fetch';
+const fetch = require('node-fetch');
 
-export async function handler(event, context) {
+exports.handler = async function (event, context) {
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -18,7 +18,7 @@ export async function handler(event, context) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.XAI_API_KEY}` // Backticks confirmed
+        'Authorization': `Bearer ${process.env.XAI_API_KEY}`
       },
       body: JSON.stringify(body)
     });
@@ -41,5 +41,5 @@ export async function handler(event, context) {
       body: JSON.stringify({ error: 'Internal server error', details: error.message })
     };
   }
-}
+};
 ```
