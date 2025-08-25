@@ -1,22 +1,15 @@
 {
-  "name": "museum-scanner-server",
+  "name": "museum-scanner",
   "version": "1.0.0",
-  "description": "Proxy server for Denman Island Museum artifact scanner",
-  "main": "functions/xai.js",
+  "description": "Denman Island Museum artifact scanner",
+  "main": "index.js",
   "scripts": {
-    "start": "node functions/xai.js"
+    "start": "node server.js"
   },
   "keywords": ["museum", "scanner", "xai"],
-  "author": "Your Name",
+  "author": "Mark Benard",
   "license": "ISC",
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "node-fetch": "^3.3.2",
-    "serverless-http": "^3.2.0"
-  },
-  "engines": {
-    "node": "18.x"
+    "node-fetch": "^3.3.2"
   }
 }
