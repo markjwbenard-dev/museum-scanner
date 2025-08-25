@@ -3,11 +3,12 @@
   "version": "1.0.0",
   "description": "Denman Island Museum artifact scanner",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "start": "node server.js"
   },
   "keywords": ["museum", "scanner", "xai"],
-  "author": "Mark Benard",
+  "author": "Your Name",
   "license": "ISC",
   "dependencies": {
     "node-fetch": "^3.3.2"
