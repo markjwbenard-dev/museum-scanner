@@ -9,9 +9,7 @@
   "keywords": ["museum", "scanner", "xai"],
   "author": "Your Name",
   "license": "ISC",
-  "dependencies": {
-    "node-fetch": "^2.6.7"
-  },
+  "dependencies": {},
   "engines": {
     "node": "18.x"
   }
