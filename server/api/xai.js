@@ -1,10 +1,21 @@
 ```javascript
-const fetch = require('node-fetch');
-
 module.exports = async function (req, res) {
-  console.log('API/xai hit:', req.method, req.url);
-  console.log('Node version:', process.version);
-  console.log('Environment keys:', Object.keys(process.env));
+  console.log('API/xai invoked:', {
+    method: req.method,
+    url: req.url,
+    nodeVersion: process.version,
+    envKeys: Object.keys(process.env)
+  });
+
+  // Handle CORS preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(200).set({
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }).send();
+    return;
+  }
 
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -12,17 +23,21 @@ module.exports = async function (req, res) {
   }
 
   try {
-    console.log('Incoming request body:', req.body);
-    console.log('Authorization header:', `Bearer ${process.env.XAI_API_KEY}`);
+    if (!req.body) {
+      throw new Error('No request body provided');
+    }
+    console.log('Request body:', req.body);
     if (!process.env.XAI_API_KEY) {
       throw new Error('XAI_API_KEY is not set');
     }
+    const authHeader = `Bearer ${process.env.XAI_API_KEY}`;
+    console.log('Authorization header:', authHeader);
 
     const response = await fetch('https://api.x.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.XAI_API_KEY}`
+        'Authorization': authHeader
       },
       body: JSON.stringify(req.body)
     });
@@ -32,10 +47,10 @@ module.exports = async function (req, res) {
     }
 
     const data = await response.json();
-    res.status(200).json(data);
+    res.status(200).set({ 'Access-Control-Allow-Origin': '*' }).json(data);
   } catch (error) {
     console.error('Server error:', error);
-    res.status(500).json({ error: 'Internal server error', details: error.message });
+    res.status(500).set({ 'Access-Control-Allow-Origin': '*' }).json({ error: 'Internal server error', details: error.message });
   }
 };
 ```
