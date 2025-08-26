@@ -11,5 +11,15 @@
       "src": "/api/xai",
       "dest": "/api/xai.js"
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/xai",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
+      ]
+    }
   ]
 }
