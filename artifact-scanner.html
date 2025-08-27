@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <meta http-equiv="pragma" content="no-cache">
     <title>Denman Island Museum Artifact Scanner</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <style>
@@ -546,16 +549,20 @@
             const exploreFurther = document.getElementById('explore-further');
             const closeDetails = document.getElementById('close-details');
 
+            // Clear previous listeners to prevent duplicates
+            const newCloseDetails = closeDetails.cloneNode(true);
+            closeDetails.parentNode.replaceChild(newCloseDetails, closeDetails);
+
             detailedImg.src = thumbnailDataUrl;
             detailedText.innerHTML = info.full;
             exploreFurther.onclick = () => openChatModal(currentItem);
-            closeDetails.onclick = () => {
+            newCloseDetails.onclick = () => {
                 detailedDesc.style.display = 'none';
                 detailedDesc.style.pointerEvents = 'none';
                 console.log('Close details clicked');
             };
 
-            // Failsafe: auto-close after 30 seconds if stuck
+            // Failsafe: auto-close after 30 seconds
             setTimeout(() => {
                 if (detailedDesc.style.display === 'flex') {
                     detailedDesc.style.display = 'none';
