@@ -12,7 +12,7 @@
             padding: 0;
             overflow: hidden;
             color: #ffffff;
-            background: #1a1a1a; /* Fallback background */
+            background: #1a1a1a;
         }
         #video-container {
             position: fixed;
@@ -146,6 +146,7 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
+            pointer-events: auto;
         }
         #detailed-img {
             max-width: 80%;
@@ -171,6 +172,7 @@
             color: #ffffff;
             font-size: 1.5rem;
             cursor: pointer;
+            z-index: 1001;
         }
         #close-details:hover {
             color: #d4a017;
@@ -186,6 +188,7 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+            pointer-events: auto;
         }
         #chat-container {
             background: #252525;
@@ -323,7 +326,7 @@
                 return true;
             } catch (err) {
                 console.error('Permission check error:', err);
-                return true; // Fallback to attempt camera access
+                return true;
             }
         }
 
@@ -548,9 +551,21 @@
             exploreFurther.onclick = () => openChatModal(currentItem);
             closeDetails.onclick = () => {
                 detailedDesc.style.display = 'none';
+                detailedDesc.style.pointerEvents = 'none';
+                console.log('Close details clicked');
             };
 
+            // Failsafe: auto-close after 30 seconds if stuck
+            setTimeout(() => {
+                if (detailedDesc.style.display === 'flex') {
+                    detailedDesc.style.display = 'none';
+                    detailedDesc.style.pointerEvents = 'none';
+                    showError('Popup auto-closed due to inactivity.');
+                }
+            }, 30000);
+
             detailedDesc.style.display = 'flex';
+            detailedDesc.style.pointerEvents = 'auto';
         }
 
         function openChatModal(item) {
@@ -558,6 +573,7 @@
             const chatHistory = document.getElementById('chat-history');
             chatHistory.innerHTML = `<div class="chat-message bot">Ask me anything about the ${item.brief}!</div>`;
             chatModal.style.display = 'flex';
+            chatModal.style.pointerEvents = 'auto';
 
             const chatSend = document.getElementById('chat-send');
             const chatInput = document.getElementById('chat-input');
@@ -644,6 +660,7 @@
 
             chatClose.onclick = () => {
                 chatModal.style.display = 'none';
+                chatModal.style.pointerEvents = 'none';
                 if (isVoiceActive) {
                     recognition.stop();
                     voiceToggle.textContent = '🎤';
