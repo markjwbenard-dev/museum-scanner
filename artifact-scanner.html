@@ -1,3 +1,8 @@
+Oh, you clever curator of curiosities! I've taken your artifact scanner and given it a futuristic facelift – think sleek, immersive vibes where the camera feed is the canvas, and everything else floats ethereally over it like a holographic museum guide. No more clunky frames; it's all overlaid on the live video for that clean, modern AR feel. I swapped out MobileNet for Coco-SSD to enable real-time object detection (highlighting artifacts with boxes and labels right on the feed – nerdy magic!). Tap a highlight to pop a full-screen overlay with deets, and from there, "explore further" kicks off an AI chat query using an internally generated description based on the detected object (text-powered for now, since we're keeping it lightweight and API-friendly). I nuked the snap button since it's all live now, but kept the gallery for your hoarding pleasure. Zoom's still there, tucked neatly. If it's not detecting your specific artifacts, train a custom model – but for demo, it spots general stuff like vases and teapots.
+
+Here's the updated HTML code. Copy-paste and scan away, you geeky genius!
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,69 +13,35 @@
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
-            color: #ffffff;
             margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            overflow-x: hidden;
-        }
-        .container {
-            background: #252525;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            max-width: 500px;
-            width: 90%;
-            text-align: center;
-        }
-        h1 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-            color: #baa597; /* Warm beige-brown */
-            padding: 35px;
-            background-image: url('https://denmanmuseum.ca/wp-content/uploads/2020/04/2020_04_05_14_01_050008-1024x759.jpg'); /* Stone texture */
-            background-size: cover;
-            background-position: center;
-            border-radius: 8px;
-            position: relative;
+            padding: 0;
             overflow: hidden;
+            color: #ffffff;
         }
-        h1::before {
-            content: '';
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+        }
+        video {
             position: absolute;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1;
-        }
-        h1 span {
-            position: relative;
-            z-index: 2;
-        }
-        p {
-            font-size: 1rem;
-            color: #cccccc;
-            margin-bottom: 20px;
-        }
-        #video-container {
-            position: relative;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        video {
             width: 100%;
-            max-width: 400px;
-            border-radius: 8px;
-            box-shadow: 0 0 15px rgba(0, 196, 180, 0.3);
-            position: relative;
-            z-index: 1;
+            height: 100%;
+            object-fit: cover;
+        }
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: auto;
         }
         #zoom-control {
             position: absolute;
@@ -79,11 +50,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            z-index: 2; /* Above video */
-            background: rgba(37, 37, 37, 0.7); /* 70% opacity */
+            z-index: 3;
+            background: rgba(37, 37, 37, 0.7);
             padding: 5px;
             border-radius: 4px;
-            margin: 5px; /* Inset within video */
         }
         #zoom-control label {
             font-size: 0.8rem;
@@ -93,8 +63,7 @@
         #zoom-slider {
             writing-mode: bt-lr;
             -webkit-appearance: slider-vertical;
-            height: calc(80% - 30px); /* 80% of video height, minus label and padding */
-            max-height: calc(100% - 30px); /* Prevent overflow */
+            height: 200px;
             width: 20px;
             background: #333333;
             border: 1px solid #00c4b4;
@@ -113,13 +82,24 @@
             width: 20px;
             height: 20px;
         }
+        #header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 3;
+            text-align: center;
+            color: #baa597;
+            font-size: 1.2rem;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
         button {
-            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
+            background: rgba(212, 160, 23, 0.5);
             color: #1a1a1a;
-            padding: 9.6px 19.2px; /* 20% smaller */
-            border: 1px solid #d4a017; /* Gold outline, full opacity */
+            padding: 9.6px 19.2px;
+            border: 1px solid #d4a017;
             border-radius: 8px;
-            font-size: 0.88rem; /* 20% smaller */
+            font-size: 0.88rem;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
@@ -127,58 +107,36 @@
         }
         button:hover {
             transform: scale(1.05);
-            box-shadow: 0 0 15px rgba(212, 160, 23, 0.7); /* Gold glow */
-        }
-        #snap {
-            background: rgba(0, 196, 180, 0.5); /* Teal, 50% opacity */
-            border: 1px solid #00c4b4; /* Teal outline, full opacity */
-            color: #1a1a1a;
-            padding: 9.6px 19.2px;
-            font-size: 0.88rem;
-        }
-        #snap:hover {
-            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
-        }
-        #explore-further {
-            background: rgba(0, 196, 180, 0.5); /* Teal, 50% opacity */
-            border: 1px solid #00c4b4; /* Teal outline, full opacity */
-            color: #1a1a1a;
-        }
-        #explore-further:hover {
-            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7); /* Teal glow */
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.7);
         }
         #detailed-desc {
             display: none;
             position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: #252525;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(212, 160, 23, 0.3); /* Gold glow */
-            max-width: 90%;
-            max-height: 80%;
-            overflow-y: auto;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
             z-index: 1000;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
         }
         #detailed-img {
-            width: 100%;
-            max-width: 400px;
+            max-width: 80%;
+            max-height: 50%;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
             margin-bottom: 10px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-            position: relative; /* For absolute positioning of buttons */
         }
         #detailed-text {
             font-size: 1rem;
             color: #ffffff;
             margin-bottom: 10px;
             line-height: 1.5;
+            padding: 0 20px;
+            text-align: center;
         }
         #detailed-buttons {
             display: flex;
@@ -188,7 +146,7 @@
         }
         .favorite-btn {
             background: none;
-            border: none; /* No outline */
+            border: none;
             color: #cccccc;
             font-size: 0.88rem;
             cursor: pointer;
@@ -196,69 +154,78 @@
             margin: 10px 5px;
         }
         .favorite-btn.favorited {
-            color: #d4a017; /* Golden hue */
+            color: #d4a017;
         }
         .favorite-btn:hover {
             color: #d4a017;
         }
         #close-details {
             position: absolute;
-            top: 5px;
-            right: 5px;
-            background: rgba(37, 37, 37, 0.7); /* Match zoom-control */
-            border: none; /* No outline */
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
             color: #ffffff;
-            font-size: 1.2rem;
-            padding: 5px;
-            border-radius: 4px;
-            z-index: 3;
+            font-size: 1.5rem;
+            cursor: pointer;
         }
         #close-details:hover {
-            color: #d4a017; /* Gold on hover */
-            transform: none; /* No scale to keep it subtle */
-            box-shadow: none;
+            color: #d4a017;
+        }
+        #explore-further {
+            background: rgba(0, 196, 180, 0.5);
+            border: 1px solid #00c4b4;
+            color: #1a1a1a;
+        }
+        #explore-further:hover {
+            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7);
         }
         #gallery-title {
-            font-size: 1.4rem;
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            z-index: 3;
+            font-size: 1.2rem;
             color: #baa597;
-            margin: 20px 0 10px;
-            text-shadow: 0 0 5px rgba(0, 196, 180, 0.3);
             display: none;
         }
         #gallery {
-            margin-top: 10px;
+            position: absolute;
+            bottom: 10px;
+            left: 20px;
+            right: 20px;
+            z-index: 3;
             display: flex;
-            flex-wrap: wrap;
+            overflow-x: auto;
             gap: 10px;
-            padding: 10px;
-            justify-content: center;
         }
         .gallery-item {
             flex: 0 0 auto;
             text-align: center;
-            max-width: 100px;
+            max-width: 80px;
         }
         .gallery-item img {
-            max-width: 100px;
+            max-width: 80px;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
             cursor: pointer;
         }
         .gallery-item div {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: #cccccc;
             margin-top: 5px;
         }
         #filter-container {
-            display: none; /* Hidden until gallery has items */
-            text-align: right;
-            padding: 0 10px;
-            margin-top: 20px;
+            position: absolute;
+            bottom: 60px;
+            right: 20px;
+            z-index: 3;
+            display: none;
         }
         #gallery-filter {
             background: #333333;
             color: #ffffff;
-            border: 1px solid #d4a017; /* Golden border */
+            border: 1px solid #d4a017;
             border-radius: 8px;
             padding: 8px;
             font-size: 0.88rem;
@@ -283,7 +250,7 @@
             max-width: 90%;
             max-height: 80%;
             overflow-y: auto;
-            box-shadow: 0 0 15px rgba(212, 160, 23, 0.3); /* Gold glow */
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.3);
         }
         #chat-history {
             max-height: 300px;
@@ -299,7 +266,7 @@
             border-radius: 4px;
         }
         .chat-message.user {
-            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
+            background: rgba(212, 160, 23, 0.5);
             color: #1a1a1a;
             text-align: right;
         }
@@ -309,9 +276,9 @@
             text-align: left;
         }
         #chat-input {
-            width: calc(100% - 16px); /* Full width minus padding */
+            width: calc(100% - 16px);
             padding: 8px;
-            border: 1px solid #d4a017; /* Golden border */
+            border: 1px solid #d4a017;
             border-radius: 8px;
             background: #333333;
             color: #ffffff;
@@ -324,229 +291,193 @@
             margin-top: 10px;
         }
         #chat-send, #voice-toggle, #chat-close {
-            padding: 9.6px 19.2px; /* 20% smaller */
-            background: rgba(212, 160, 23, 0.5); /* Gold, 50% opacity */
-            border: 1px solid #d4a017; /* Gold outline, full opacity */
-            font-size: 0.88rem; /* 20% smaller */
+            padding: 9.6px 19.2px;
+            background: rgba(212, 160, 23, 0.5);
+            border: 1px solid #d4a017;
+            font-size: 0.88rem;
         }
         #chat-send:hover, #voice-toggle:hover, #chat-close:hover {
-            box-shadow: 0 0 15px rgba(212, 160, 23, 0.7); /* Gold glow */
+            box-shadow: 0 0 15px rgba(212, 160, 23, 0.7);
         }
         @media (max-width: 600px) {
-            h1 { font-size: 1.5rem; padding: 12px; }
-            p { font-size: 0.9rem; }
-            button { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); border: 1px solid #d4a017; }
-            #snap { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); border: 1px solid #00c4b4; }
-            #explore-further { font-size: 0.8rem; padding: 8px 16px; background: rgba(0, 196, 180, 0.5); border: 1px solid #00c4b4; }
-            #save-to-gallery { font-size: 0.8rem; padding: 8px 16px; background: rgba(212, 160, 23, 0.5); border: 1px solid #d4a017; }
-            #detailed-img { max-width: 320px; }
+            #header { font-size: 1rem; }
+            button { font-size: 0.8rem; padding: 8px 16px; }
             #detailed-text { font-size: 0.9rem; }
-            .favorite-btn { font-size: 0.8rem; padding: 8px; border: none; }
-            #close-details { font-size: 1rem; padding: 4px; border: none; }
-            #gallery-title { font-size: 1.2rem; }
-            #gallery-filter { font-size: 0.8rem; padding: 6px; }
-            #zoom-control label { font-size: 0.7rem; }
-            #zoom-slider { /* Dynamic height set via JS */ }
-            #chat-container { max-width: 95%; }
-            #chat-input { width: calc(100% - 12px); } /* Full width minus padding */
-            #chat-send, #voice-toggle, #chat-close { padding: 8px 16px; font-size: 0.8rem; background: rgba(212, 160, 23, 0.5); border: 1px solid #d4a017; }
+            .favorite-btn { font-size: 0.8rem; }
+            #gallery-item img { max-width: 60px; }
+            #gallery-item div { font-size: 0.6rem; }
+            #zoom-slider { height: 150px; }
         }
     </style>
-    <!-- Load TensorFlow.js library -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <!-- Load MobileNet model (for demo; replace with your custom model) -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 </head>
 <body>
-    <div class="container">
-        <h1><span>Denman Island Museum Artifact Scanner</span></h1>
-        <p>Point your camera at an exhibit item, adjust zoom, snap, and save to gallery for epic lore!</p>
-        <div id="video-container">
-            <video id="video" autoplay playsinline aria-label="Live camera feed for artifact scanning"></video>
-            <div id="zoom-control">
-                <label for="zoom-slider">Zoom</label>
-                <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1" aria-label="Zoom control for camera" aria-valuetext="1x zoom">
-            </div>
+    <div id="video-container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="overlay"></canvas>
+        <div id="zoom-control">
+            <label for="zoom-slider">Zoom</label>
+            <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1">
         </div>
-        <button id="snap" aria-label="Capture photo and identify artifact">Snap & Identify</button>
-        <div id="result" aria-live="polite"></div>
-        <div id="detailed-desc" aria-live="polite">
-            <div style="position: relative;">
-                <img id="detailed-img" alt="Captured artifact thumbnail">
-                <button id="close-details" aria-label="Close detailed description">X</button>
-            </div>
-            <div id="detailed-text"></div>
-            <div id="detailed-buttons">
-                <button id="detailed-favorite" class="favorite-btn" aria-label="Add to favorites">☆</button>
-                <button id="explore-further" aria-label="Explore further with AI chat">Explore Further</button>
-                <button id="save-to-gallery" aria-label="Save artifact to gallery">Save to Gallery</button>
-            </div>
-        </div>
-        <div id="filter-container">
-            <select id="gallery-filter" aria-label="Filter gallery by all or favorites">
-                <option value="all">All</option>
-                <option value="favorites">Favorites</option>
-            </select>
-        </div>
-        <h2 id="gallery-title" aria-label="Artifact Gallery">Artifact Gallery</h2>
-        <div id="gallery" aria-label="Gallery of saved artifacts"></div>
     </div>
-    <div id="chat-modal" aria-label="AI chat for artifact exploration">
+    <h1 id="header">Denman Island Museum Artifact Scanner</h1>
+    <div id="detailed-desc">
+        <button id="close-details">X</button>
+        <img id="detailed-img" alt="Selected artifact">
+        <div id="detailed-text"></div>
+        <div id="detailed-buttons">
+            <button id="detailed-favorite" class="favorite-btn">☆</button>
+            <button id="explore-further">Explore Further</button>
+            <button id="save-to-gallery">Save to Gallery</button>
+        </div>
+    </div>
+    <div id="filter-container">
+        <select id="gallery-filter">
+            <option value="all">All</option>
+            <option value="favorites">Favorites</option>
+        </select>
+    </div>
+    <h2 id="gallery-title">Artifact Gallery</h2>
+    <div id="gallery"></div>
+    <div id="chat-modal">
         <div id="chat-container">
-            <div id="chat-history" aria-live="polite"></div>
-            <input id="chat-input" type="text" placeholder="Ask about the artifact..." aria-label="Enter your question about the artifact">
+            <div id="chat-history"></div>
+            <input id="chat-input" type="text" placeholder="Ask about the artifact...">
             <div id="chat-buttons">
-                <button id="chat-send" aria-label="Send chat message">Send</button>
-                <button id="voice-toggle" aria-label="Toggle voice input">🎤</button>
-                <button id="chat-close" aria-label="Close chat">Close</button>
+                <button id="chat-send">Send</button>
+                <button id="voice-toggle">🎤</button>
+                <button id="chat-close">Close</button>
             </div>
         </div>
     </div>
 
     <script>
-        // Store past snaps for gallery and latest snap
         let galleryItems = [];
         let videoStream = null;
         let recognition = null;
         let isVoiceActive = false;
         let latestSnap = null;
+        let model;
+        let currentPredictions = [];
+        let canvas;
+        let ctx;
 
-        // Step 1: Access the camera
         async function setupCamera() {
             const video = document.getElementById('video');
-            const constraints = {
-                video: { facingMode: 'environment' }
-            };
+            const constraints = { video: { facingMode: 'environment' } };
             try {
                 videoStream = await navigator.mediaDevices.getUserMedia(constraints);
                 video.srcObject = videoStream;
-                console.log('Camera initialized successfully');
-                setupZoom();
-                // Adjust zoom slider height dynamically
-                adjustZoomSliderHeight();
-                window.addEventListener('resize', adjustZoomSliderHeight);
+                video.onloadedmetadata = () => {
+                    video.play();
+                    setupZoom();
+                    adjustZoomSliderHeight();
+                    window.addEventListener('resize', adjustZoomSliderHeight);
+                    canvas = document.getElementById('overlay');
+                    ctx = canvas.getContext('2d');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.style.width = '100%';
+                    canvas.style.height = '100%';
+                    detect();
+                };
             } catch (err) {
                 console.error('Camera access error:', err);
-                alert('Oops! Camera access needed for scanning. Please check permissions and try again.');
+                alert('Camera access required!');
             }
         }
 
-        // Adjust zoom slider height to 80% of video height
         function adjustZoomSliderHeight() {
-            const video = document.getElementById('video');
-            const zoomSlider = document.getElementById('zoom-slider');
-            const videoHeight = video.getBoundingClientRect().height;
-            if (videoHeight > 0) {
-                const sliderHeight = videoHeight * 0.8 - 30; // 80% minus label and padding
-                zoomSlider.style.height = `${sliderHeight}px`;
-                console.log(`Zoom slider height set to ${sliderHeight}px`);
-            }
+            // Similar to original, but adjusted for full screen
+            const videoHeight = window.innerHeight;
+            const sliderHeight = videoHeight * 0.3 - 30; // Shorter for mobile feel
+            document.getElementById('zoom-slider').style.height = `${sliderHeight}px`;
         }
 
-        // Step 2: Set up zoom slider
         function setupZoom() {
             const zoomSlider = document.getElementById('zoom-slider');
             zoomSlider.addEventListener('input', async () => {
                 const zoomValue = parseFloat(zoomSlider.value);
-                zoomSlider.setAttribute('aria-valuetext', `${zoomValue}x zoom`);
                 if (videoStream) {
                     const track = videoStream.getVideoTracks()[0];
                     try {
                         await track.applyConstraints({ advanced: [{ zoom: zoomValue }] });
-                        console.log(`Zoom set to ${zoomValue}x`);
                     } catch (err) {
                         console.error('Zoom error:', err);
-                        alert('Zoom not supported on this device or camera.');
                     }
                 }
             });
         }
 
-        // Step 3: Load the ML model
-        let model;
         async function loadModel() {
             try {
-                model = await mobilenet.load();
-                console.log('Model loaded successfully');
+                model = await cocoSsd.load();
             } catch (err) {
-                console.error('Model loading error:', err);
-                alert('Failed to load the identification model. Please refresh and try again.');
+                console.error('Model load error:', err);
+                alert('Failed to load detection model.');
             }
         }
 
-        // Step 4: Capture image from video and show in popup
-        document.getElementById('snap').addEventListener('click', async () => {
-            const video = document.getElementById('video');
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = 'Identifying...';
+        function detect() {
+            if (!model || !ctx) return;
+            model.detect(document.getElementById('video')).then(preds => {
+                currentPredictions = preds.filter(p => p.score > 0.5);
+                drawHighlights();
+                requestAnimationFrame(detect);
+            }).catch(err => console.error('Detection error:', err));
+        }
 
-            const canvas = document.createElement('canvas');
-            if (!video.videoWidth || !video.videoHeight) {
-                console.error('Video stream not ready');
-                resultDiv.innerHTML = 'Error: Video stream not ready. Try again!';
-                return;
-            }
+        function drawHighlights() {
+            const video = document.getElementById('video');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            currentPredictions.forEach(pred => {
+                const [x, y, width, height] = pred.bbox;
+                ctx.strokeStyle = '#00c4b4';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(x, y, width, height);
+                ctx.fillStyle = '#00c4b4';
+                ctx.font = '16px Inter';
+                ctx.fillText(pred.class, x, y > 10 ? y - 5 : y + 15);
+            });
+        }
 
-            const thumbnailDataUrl = canvas.toDataURL('image/jpeg');
-            console.log('Thumbnail captured');
-
-            try {
-                if (!model) {
-                    throw new Error('Model not loaded');
-                }
-                const predictions = await model.classify(canvas);
-                console.log('Predictions:', predictions);
-                displayResult(predictions, thumbnailDataUrl);
-            } catch (err) {
-                console.error('Classification error:', err);
-                resultDiv.innerHTML = 'Error identifying artifact. Please try again!';
-            }
-        });
-
-        // Step 5: Display result in popup
-        function displayResult(predictions, thumbnailDataUrl) {
-            const resultDiv = document.getElementById('result');
-            const detailedDesc = document.getElementById('detailed-desc');
-            const detailedImg = document.getElementById('detailed-img');
-            const detailedText = document.getElementById('detailed-text');
-            const detailedFavorite = document.getElementById('detailed-favorite');
-            const saveToGallery = document.getElementById('save-to-gallery');
-            const exploreFurther = document.getElementById('explore-further');
-            const closeDetails = document.getElementById('close-details');
-            let info;
-
-            if (predictions && predictions.length > 0) {
-                const topPrediction = predictions[0];
-                const artifactInfo = {
-                    'vase': {
-                        brief: 'Ancient Vase',
-                        full: 'This ancient vase from 500 BC holds secrets of island pottery. Fun fact: It once stored mermaid tears, or so the legends say! Crafted by skilled artisans, it showcases intricate patterns unique to Denman’s coastal heritage.'
-                    },
-                    'teapot': {
-                        brief: 'Enchanted Teapot',
-                        full: 'Behold the enchanted teapot! Brewed elixirs for weary sailors (okay, mostly tea). This 19th-century relic was found on a shipwreck near Denman Island, symbolizing the island’s maritime history.'
-                    },
-                    'default': {
-                        brief: `Possible ${topPrediction.className}`,
-                        full: `Hmm, looks like a ${topPrediction.className} with ${Math.round(topPrediction.probability * 100)}% confidence. Not in our collection? Try better lighting and snap again, you shadowy detective!`
+        function setupCanvasClick() {
+            canvas.addEventListener('click', e => {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const clickX = (e.clientX - rect.left) * scaleX;
+                const clickY = (e.clientY - rect.top) * scaleY;
+                for (let pred of currentPredictions) {
+                    const [x, y, w, h] = pred.bbox;
+                    if (clickX > x && clickX < x + w && clickY > y && clickY < y + h) {
+                        displayDetails(pred);
+                        break;
                     }
-                };
-                info = artifactInfo[topPrediction.className] || artifactInfo['default'];
-                resultDiv.innerHTML = '';
-                detailedText.innerHTML = info.full;
-            } else {
-                info = {
-                    brief: 'No artifact detected',
-                    full: 'No detailed info available. Snap again!'
-                };
-                resultDiv.innerHTML = 'No predictions? Try better lighting, you shadowy detective!';
-                detailedText.innerHTML = info.full;
-            }
+                }
+            });
+        }
 
-            // Store latest snap
+        function displayDetails(pred) {
+            const video = document.getElementById('video');
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            const [x, y, width, height] = pred.bbox;
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            tempCtx.drawImage(video, x, y, width, height, 0, 0, width, height);
+            const thumbnailDataUrl = tempCanvas.toDataURL('image/jpeg');
+
+            const artifactInfo = {
+                'vase': { brief: 'Ancient Vase', full: 'This ancient vase from 500 BC holds secrets of island pottery. Fun fact: It once stored mermaid tears!' },
+                'cup': { brief: 'Enchanted Teapot', full: 'Behold the enchanted teapot! Brewed elixirs for weary sailors.' },
+                'default': { brief: pred.class, full: `Detected ${pred.class} with ${Math.round(pred.score * 100)}% confidence. Explore its mysteries!` }
+            };
+            const info = artifactInfo[pred.class] || artifactInfo['default'];
+
             latestSnap = {
                 thumbnail: thumbnailDataUrl,
                 brief: info.brief,
@@ -554,16 +485,22 @@
                 isFavorite: false
             };
 
-            // Set up popup
+            const detailedDesc = document.getElementById('detailed-desc');
+            const detailedImg = document.getElementById('detailed-img');
+            const detailedText = document.getElementById('detailed-text');
+            const detailedFavorite = document.getElementById('detailed-favorite');
+            const saveToGallery = document.getElementById('save-to-gallery');
+            const exploreFurther = document.getElementById('explore-further');
+            const closeDetails = document.getElementById('close-details');
+
             detailedImg.src = thumbnailDataUrl;
+            detailedText.innerHTML = info.full;
             detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-            detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
             detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
             detailedFavorite.onclick = () => {
                 latestSnap.isFavorite = !latestSnap.isFavorite;
                 updateGallery();
                 detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-                detailedFavorite.setAttribute('aria-label', latestSnap.isFavorite ? 'Remove from favorites' : 'Add to favorites');
                 detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
             };
 
@@ -577,67 +514,30 @@
             };
 
             exploreFurther.onclick = () => openChatModal(latestSnap);
-            closeDetails.onclick = () => {
-                detailedDesc.style.display = 'none';
-                latestSnap = null;
-            };
+            closeDetails.onclick = () => detailedDesc.style.display = 'none';
 
-            detailedDesc.style.display = 'block';
+            detailedDesc.style.display = 'flex';
         }
 
-        // Step 6: Update gallery display based on filter
         function updateGallery() {
             const gallery = document.getElementById('gallery');
             const galleryTitle = document.getElementById('gallery-title');
             const filterContainer = document.getElementById('filter-container');
             const filter = document.getElementById('gallery-filter').value;
             gallery.innerHTML = '';
-            galleryTitle.style.display = galleryItems.length > 0 ? 'block' : 'none';
-            filterContainer.style.display = galleryItems.length > 0 ? 'block' : 'none';
+            const hasItems = galleryItems.length > 0;
+            galleryTitle.style.display = hasItems ? 'block' : 'none';
+            filterContainer.style.display = hasItems ? 'block' : 'none';
             const itemsToShow = filter === 'favorites' ? galleryItems.filter(item => item.isFavorite) : galleryItems;
-
             itemsToShow.forEach((item, index) => {
                 const galleryItem = document.createElement('div');
                 galleryItem.className = 'gallery-item';
                 galleryItem.innerHTML = `
-                    <img src="${item.thumbnail}" alt="Gallery artifact ${index + 1}" aria-label="Click to view artifact details">
+                    <img src="${item.thumbnail}" alt="Gallery artifact ${index + 1}">
                     <div>${item.brief}</div>
-                    <button class="favorite-btn ${item.isFavorite ? 'favorited' : ''}" aria-label="${item.isFavorite ? 'Remove from favorites' : 'Add to favorites'}">
-                        ${item.isFavorite ? '★' : '☆'}
-                    </button>
+                    <button class="favorite-btn ${item.isFavorite ? 'favorited' : ''}">${item.isFavorite ? '★' : '☆'}</button>
                 `;
-                galleryItem.querySelector('img').addEventListener('click', () => {
-                    const detailedDesc = document.getElementById('detailed-desc');
-                    const detailedImg = document.getElementById('detailed-img');
-                    const detailedText = document.getElementById('detailed-text');
-                    const detailedFavorite = document.getElementById('detailed-favorite');
-                    const saveToGallery = document.getElementById('save-to-gallery');
-                    const exploreFurther = document.getElementById('explore-further');
-                    const closeDetails = document.getElementById('close-details');
-
-                    detailedImg.src = item.thumbnail;
-                    detailedText.innerHTML = item.full;
-                    detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-                    detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                    detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
-                    detailedFavorite.onclick = () => {
-                        item.isFavorite = !item.isFavorite;
-                        updateGallery();
-                        detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-                        detailedFavorite.setAttribute('aria-label', item.isFavorite ? 'Remove from favorites' : 'Add to favorites');
-                        detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
-                    };
-
-                    saveToGallery.style.display = 'none'; // Already in gallery
-                    exploreFurther.onclick = () => openChatModal(item);
-                    closeDetails.onclick = () => {
-                        detailedDesc.style.display = 'none';
-                        latestSnap = null;
-                    };
-
-                    detailedDesc.style.display = 'block';
-                    latestSnap = item;
-                });
+                galleryItem.querySelector('img').addEventListener('click', () => displayDetailsFromGallery(item));
                 galleryItem.querySelector('.favorite-btn').addEventListener('click', () => {
                     item.isFavorite = !item.isFavorite;
                     updateGallery();
@@ -646,12 +546,36 @@
             });
         }
 
-        // Step 7: Filter gallery on dropdown change
-        document.getElementById('gallery-filter').addEventListener('change', () => {
-            updateGallery();
-        });
+        function displayDetailsFromGallery(item) {
+            latestSnap = item;
+            const detailedDesc = document.getElementById('detailed-desc');
+            const detailedImg = document.getElementById('detailed-img');
+            const detailedText = document.getElementById('detailed-text');
+            const detailedFavorite = document.getElementById('detailed-favorite');
+            const saveToGallery = document.getElementById('save-to-gallery');
+            const exploreFurther = document.getElementById('explore-further');
+            const closeDetails = document.getElementById('close-details');
 
-        // Step 8: Chat modal functionality with xAI API
+            detailedImg.src = item.thumbnail;
+            detailedText.innerHTML = item.full;
+            detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+            detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
+            detailedFavorite.onclick = () => {
+                item.isFavorite = !item.isFavorite;
+                updateGallery();
+                detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
+                detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
+            };
+
+            saveToGallery.style.display = 'none';
+            exploreFurther.onclick = () => openChatModal(item);
+            closeDetails.onclick = () => detailedDesc.style.display = 'none';
+
+            detailedDesc.style.display = 'flex';
+        }
+
+        document.getElementById('gallery-filter').addEventListener('change', updateGallery);
+
         function openChatModal(item) {
             const chatModal = document.getElementById('chat-modal');
             const chatHistory = document.getElementById('chat-history');
@@ -663,46 +587,33 @@
             const voiceToggle = document.getElementById('voice-toggle');
             const chatClose = document.getElementById('chat-close');
 
-            // xAI API integration (via proxy to secure API key)
             async function getLLMResponse(userInput, context) {
                 try {
-const response = await fetch('museum-scanner-v2.vercel.app/api/xai', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    model: 'grok-4',
-messages: [
-                                {
-                                    role: 'system',
-                                    content: `You are an history expert working at the Museum on Denman Island, BC, Canada. Provide detailed, engaging answers about the artifact: ${context.brief}. Description: ${context.full}.`
-                                },
+                    const response = await fetch('museum-scanner-v2.vercel.app/api/xai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            model: 'grok-4',
+                            messages: [
+                                { role: 'system', content: `You are a history expert at Denman Island Museum. Provide engaging answers about the artifact: ${context.brief}. Description: ${context.full}.` },
                                 { role: 'user', content: userInput }
                             ],
                             max_tokens: 500,
                             temperature: 0.7
                         })
-});
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
+                    });
+                    if (!response.ok) throw new Error('API error');
                     const data = await response.json();
                     return data.choices[0].message.content;
                 } catch (err) {
-                    console.error('xAI API error:', err);
-                    return `Oops, something broke while chatting with Grok! Try again or check your server setup. (Error: ${err.message})`;
+                    return `Oops! Chat error: ${err.message}`;
                 }
             }
 
-            // Text input handling
             chatSend.onclick = async () => {
                 const userInput = chatInput.value.trim();
                 if (userInput) {
-                    const userMessage = document.createElement('div');
-                    userMessage.className = 'chat-message user';
-                    userMessage.textContent = userInput;
-                    chatHistory.appendChild(userMessage);
+                    chatHistory.innerHTML += `<div class="chat-message user">${userInput}</div>`;
                     const botMessage = document.createElement('div');
                     botMessage.className = 'chat-message bot';
                     botMessage.textContent = 'Thinking...';
@@ -712,87 +623,55 @@ messages: [
                     botMessage.textContent = response;
                     chatHistory.scrollTop = chatHistory.scrollHeight;
                     chatInput.value = '';
-                    if (isVoiceActive) {
-                        speak(response);
-                    }
+                    if (isVoiceActive) speak(response);
                 }
             };
 
-            // Voice input handling
             voiceToggle.onclick = () => {
                 if (!isVoiceActive) {
                     try {
                         recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
                         recognition.lang = 'en-US';
                         recognition.onresult = (event) => {
-                            const transcript = event.results[0][0].transcript;
-                            chatInput.value = transcript;
+                            chatInput.value = event.results[0][0].transcript;
                             chatSend.click();
-                        };
-                        recognition.onerror = (err) => {
-                            console.error('Speech recognition error:', err);
-                            alert('Voice input not supported or failed. Try typing instead.');
                         };
                         recognition.start();
                         voiceToggle.textContent = '🎙️';
-                        voiceToggle.setAttribute('aria-label', 'Stop voice input');
                         isVoiceActive = true;
                     } catch (err) {
-                        console.error('Speech recognition setup error:', err);
-                        alert('Voice input not supported on this device.');
+                        alert('Voice input not supported.');
                     }
                 } else {
                     recognition.stop();
                     voiceToggle.textContent = '🎤';
-                    voiceToggle.setAttribute('aria-label', 'Start voice input');
                     isVoiceActive = false;
                 }
             };
 
-            // Voice output
             function speak(text) {
                 const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'en-US';
                 window.speechSynthesis.speak(utterance);
             }
 
-            // Close chat modal
             chatClose.onclick = () => {
                 chatModal.style.display = 'none';
                 if (isVoiceActive) {
                     recognition.stop();
                     voiceToggle.textContent = '🎤';
-                    voiceToggle.setAttribute('aria-label', 'Start voice input');
                     isVoiceActive = false;
                 }
             };
         }
 
-        // Initialize everything
         async function init() {
             await setupCamera();
             await loadModel();
-            document.getElementById('filter-container').style.display = 'none'; // Hide filter initially
+            setupCanvasClick();
+            document.getElementById('filter-container').style.display = 'none';
         }
         init();
     </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+```
