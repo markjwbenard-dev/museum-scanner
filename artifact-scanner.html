@@ -38,6 +38,19 @@
             z-index: 2;
             pointer-events: auto;
         }
+        #error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            background: rgba(255, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            display: none;
+        }
         #zoom-control {
             position: absolute;
             top: 10px;
@@ -104,6 +117,14 @@
             transform: scale(1.05);
             box-shadow: 0 0 15px rgba(212, 160, 23, 0.7);
         }
+        #explore-further {
+            background: rgba(0, 196, 180, 0.5);
+            border: 1px solid #00c4b4;
+            color: #1a1a1a;
+        }
+        #explore-further:hover {
+            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7);
+        }
         #detailed-desc {
             display: none;
             position: fixed;
@@ -133,27 +154,6 @@
             padding: 0 20px;
             text-align: center;
         }
-        #detailed-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .favorite-btn {
-            background: none;
-            border: none;
-            color: #cccccc;
-            font-size: 0.88rem;
-            cursor: pointer;
-            padding: 9.6px;
-            margin: 10px 5px;
-        }
-        .favorite-btn.favorited {
-            color: #d4a017;
-        }
-        .favorite-btn:hover {
-            color: #d4a017;
-        }
         #close-details {
             position: absolute;
             top: 10px;
@@ -166,65 +166,6 @@
         }
         #close-details:hover {
             color: #d4a017;
-        }
-        #explore-further {
-            background: rgba(0, 196, 180, 0.5);
-            border: 1px solid #00c4b4;
-            color: #1a1a1a;
-        }
-        #explore-further:hover {
-            box-shadow: 0 0 15px rgba(0, 196, 180, 0.7);
-        }
-        #gallery-title {
-            position: absolute;
-            bottom: 80px;
-            left: 20px;
-            z-index: 3;
-            font-size: 1.2rem;
-            color: #baa597;
-            display: none;
-        }
-        #gallery {
-            position: absolute;
-            bottom: 10px;
-            left: 20px;
-            right: 20px;
-            z-index: 3;
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-        }
-        .gallery-item {
-            flex: 0 0 auto;
-            text-align: center;
-            max-width: 80px;
-        }
-        .gallery-item img {
-            max-width: 80px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 196, 180, 0.3);
-            cursor: pointer;
-        }
-        .gallery-item div {
-            font-size: 0.7rem;
-            color: #cccccc;
-            margin-top: 5px;
-        }
-        #filter-container {
-            position: absolute;
-            bottom: 60px;
-            right: 20px;
-            z-index: 3;
-            display: none;
-        }
-        #gallery-filter {
-            background: #333333;
-            color: #ffffff;
-            border: 1px solid #d4a017;
-            border-radius: 8px;
-            padding: 8px;
-            font-size: 0.88rem;
-            cursor: pointer;
         }
         #chat-modal {
             display: none;
@@ -298,374 +239,9 @@
             #header { font-size: 1rem; }
             button { font-size: 0.8rem; padding: 8px 16px; }
             #detailed-text { font-size: 0.9rem; }
-            .favorite-btn { font-size: 0.8rem; }
-            #gallery-item img { max-width: 60px; }
-            #gallery-item div { font-size: 0.6rem; }
             #zoom-slider { height: 150px; }
+            #error-message { font-size: 0.9rem; padding: 10px; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-</head>
-<body>
-    <div id="video-container">
-        <video id="video" autoplay playsinline></video>
-        <canvas id="overlay"></canvas>
-        <div id="zoom-control">
-            <label for="zoom-slider">Zoom</label>
-            <input type="range" id="zoom-slider" min="1" max="4" step="0.1" value="1">
-        </div>
-    </div>
-    <h1 id="header">Denman Island Museum Artifact Scanner</h1>
-    <div id="detailed-desc">
-        <button id="close-details">X</button>
-        <img id="detailed-img" alt="Selected artifact">
-        <div id="detailed-text"></div>
-        <div id="detailed-buttons">
-            <button id="detailed-favorite" class="favorite-btn">☆</button>
-            <button id="explore-further">Explore Further</button>
-            <button id="save-to-gallery">Save to Gallery</button>
-        </div>
-    </div>
-    <div id="filter-container">
-        <select id="gallery-filter">
-            <option value="all">All</option>
-            <option value="favorites">Favorites</option>
-        </select>
-    </div>
-    <h2 id="gallery-title">Artifact Gallery</h2>
-    <div id="gallery"></div>
-    <div id="chat-modal">
-        <div id="chat-container">
-            <div id="chat-history"></div>
-            <input id="chat-input" type="text" placeholder="Ask about the artifact...">
-            <div id="chat-buttons">
-                <button id="chat-send">Send</button>
-                <button id="voice-toggle">🎤</button>
-                <button id="chat-close">Close</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        let galleryItems = [];
-        let videoStream = null;
-        let recognition = null;
-        let isVoiceActive = false;
-        let latestSnap = null;
-        let model;
-        let currentPredictions = [];
-        let canvas;
-        let ctx;
-
-        async function setupCamera() {
-            const video = document.getElementById('video');
-            const constraints = { video: { facingMode: 'environment' } };
-            try {
-                videoStream = await navigator.mediaDevices.getUserMedia(constraints);
-                video.srcObject = videoStream;
-                video.onloadedmetadata = () => {
-                    video.play();
-                    setupZoom();
-                    adjustZoomSliderHeight();
-                    window.addEventListener('resize', adjustZoomSliderHeight);
-                    canvas = document.getElementById('overlay');
-                    ctx = canvas.getContext('2d');
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    canvas.style.width = '100%';
-                    canvas.style.height = '100%';
-                    detect();
-                };
-            } catch (err) {
-                console.error('Camera access error:', err);
-                alert('Camera access required!');
-            }
-        }
-
-        function adjustZoomSliderHeight() {
-            // Similar to original, but adjusted for full screen
-            const videoHeight = window.innerHeight;
-            const sliderHeight = videoHeight * 0.3 - 30; // Shorter for mobile feel
-            document.getElementById('zoom-slider').style.height = `${sliderHeight}px`;
-        }
-
-        function setupZoom() {
-            const zoomSlider = document.getElementById('zoom-slider');
-            zoomSlider.addEventListener('input', async () => {
-                const zoomValue = parseFloat(zoomSlider.value);
-                if (videoStream) {
-                    const track = videoStream.getVideoTracks()[0];
-                    try {
-                        await track.applyConstraints({ advanced: [{ zoom: zoomValue }] });
-                    } catch (err) {
-                        console.error('Zoom error:', err);
-                    }
-                }
-            });
-        }
-
-        async function loadModel() {
-            try {
-                model = await cocoSsd.load();
-            } catch (err) {
-                console.error('Model load error:', err);
-                alert('Failed to load detection model.');
-            }
-        }
-
-        function detect() {
-            if (!model || !ctx) return;
-            model.detect(document.getElementById('video')).then(preds => {
-                currentPredictions = preds.filter(p => p.score > 0.5);
-                drawHighlights();
-                requestAnimationFrame(detect);
-            }).catch(err => console.error('Detection error:', err));
-        }
-
-        function drawHighlights() {
-            const video = document.getElementById('video');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            currentPredictions.forEach(pred => {
-                const [x, y, width, height] = pred.bbox;
-                ctx.strokeStyle = '#00c4b4';
-                ctx.lineWidth = 4;
-                ctx.strokeRect(x, y, width, height);
-                ctx.fillStyle = '#00c4b4';
-                ctx.font = '16px Inter';
-                ctx.fillText(pred.class, x, y > 10 ? y - 5 : y + 15);
-            });
-        }
-
-        function setupCanvasClick() {
-            canvas.addEventListener('click', e => {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                const clickX = (e.clientX - rect.left) * scaleX;
-                const clickY = (e.clientY - rect.top) * scaleY;
-                for (let pred of currentPredictions) {
-                    const [x, y, w, h] = pred.bbox;
-                    if (clickX > x && clickX < x + w && clickY > y && clickY < y + h) {
-                        displayDetails(pred);
-                        break;
-                    }
-                }
-            });
-        }
-
-        function displayDetails(pred) {
-            const video = document.getElementById('video');
-            const tempCanvas = document.createElement('canvas');
-            const tempCtx = tempCanvas.getContext('2d');
-            const [x, y, width, height] = pred.bbox;
-            tempCanvas.width = width;
-            tempCanvas.height = height;
-            tempCtx.drawImage(video, x, y, width, height, 0, 0, width, height);
-            const thumbnailDataUrl = tempCanvas.toDataURL('image/jpeg');
-
-            const artifactInfo = {
-                'vase': { brief: 'Ancient Vase', full: 'This ancient vase from 500 BC holds secrets of island pottery. Fun fact: It once stored mermaid tears!' },
-                'cup': { brief: 'Enchanted Teapot', full: 'Behold the enchanted teapot! Brewed elixirs for weary sailors.' },
-                'default': { brief: pred.class, full: `Detected ${pred.class} with ${Math.round(pred.score * 100)}% confidence. Explore its mysteries!` }
-            };
-            const info = artifactInfo[pred.class] || artifactInfo['default'];
-
-            latestSnap = {
-                thumbnail: thumbnailDataUrl,
-                brief: info.brief,
-                full: info.full,
-                isFavorite: false
-            };
-
-            const detailedDesc = document.getElementById('detailed-desc');
-            const detailedImg = document.getElementById('detailed-img');
-            const detailedText = document.getElementById('detailed-text');
-            const detailedFavorite = document.getElementById('detailed-favorite');
-            const saveToGallery = document.getElementById('save-to-gallery');
-            const exploreFurther = document.getElementById('explore-further');
-            const closeDetails = document.getElementById('close-details');
-
-            detailedImg.src = thumbnailDataUrl;
-            detailedText.innerHTML = info.full;
-            detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-            detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
-            detailedFavorite.onclick = () => {
-                latestSnap.isFavorite = !latestSnap.isFavorite;
-                updateGallery();
-                detailedFavorite.className = `favorite-btn ${latestSnap.isFavorite ? 'favorited' : ''}`;
-                detailedFavorite.innerHTML = latestSnap.isFavorite ? '★' : '☆';
-            };
-
-            saveToGallery.style.display = galleryItems.some(item => item.thumbnail === latestSnap.thumbnail) ? 'none' : 'inline-block';
-            saveToGallery.onclick = () => {
-                if (!galleryItems.some(item => item.thumbnail === latestSnap.thumbnail)) {
-                    galleryItems.push(latestSnap);
-                    updateGallery();
-                    saveToGallery.style.display = 'none';
-                }
-            };
-
-            exploreFurther.onclick = () => openChatModal(latestSnap);
-            closeDetails.onclick = () => detailedDesc.style.display = 'none';
-
-            detailedDesc.style.display = 'flex';
-        }
-
-        function updateGallery() {
-            const gallery = document.getElementById('gallery');
-            const galleryTitle = document.getElementById('gallery-title');
-            const filterContainer = document.getElementById('filter-container');
-            const filter = document.getElementById('gallery-filter').value;
-            gallery.innerHTML = '';
-            const hasItems = galleryItems.length > 0;
-            galleryTitle.style.display = hasItems ? 'block' : 'none';
-            filterContainer.style.display = hasItems ? 'block' : 'none';
-            const itemsToShow = filter === 'favorites' ? galleryItems.filter(item => item.isFavorite) : galleryItems;
-            itemsToShow.forEach((item, index) => {
-                const galleryItem = document.createElement('div');
-                galleryItem.className = 'gallery-item';
-                galleryItem.innerHTML = `
-                    <img src="${item.thumbnail}" alt="Gallery artifact ${index + 1}">
-                    <div>${item.brief}</div>
-                    <button class="favorite-btn ${item.isFavorite ? 'favorited' : ''}">${item.isFavorite ? '★' : '☆'}</button>
-                `;
-                galleryItem.querySelector('img').addEventListener('click', () => displayDetailsFromGallery(item));
-                galleryItem.querySelector('.favorite-btn').addEventListener('click', () => {
-                    item.isFavorite = !item.isFavorite;
-                    updateGallery();
-                });
-                gallery.appendChild(galleryItem);
-            });
-        }
-
-        function displayDetailsFromGallery(item) {
-            latestSnap = item;
-            const detailedDesc = document.getElementById('detailed-desc');
-            const detailedImg = document.getElementById('detailed-img');
-            const detailedText = document.getElementById('detailed-text');
-            const detailedFavorite = document.getElementById('detailed-favorite');
-            const saveToGallery = document.getElementById('save-to-gallery');
-            const exploreFurther = document.getElementById('explore-further');
-            const closeDetails = document.getElementById('close-details');
-
-            detailedImg.src = item.thumbnail;
-            detailedText.innerHTML = item.full;
-            detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-            detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
-            detailedFavorite.onclick = () => {
-                item.isFavorite = !item.isFavorite;
-                updateGallery();
-                detailedFavorite.className = `favorite-btn ${item.isFavorite ? 'favorited' : ''}`;
-                detailedFavorite.innerHTML = item.isFavorite ? '★' : '☆';
-            };
-
-            saveToGallery.style.display = 'none';
-            exploreFurther.onclick = () => openChatModal(item);
-            closeDetails.onclick = () => detailedDesc.style.display = 'none';
-
-            detailedDesc.style.display = 'flex';
-        }
-
-        document.getElementById('gallery-filter').addEventListener('change', updateGallery);
-
-        function openChatModal(item) {
-            const chatModal = document.getElementById('chat-modal');
-            const chatHistory = document.getElementById('chat-history');
-            chatHistory.innerHTML = `<div class="chat-message bot">Ask me anything about the ${item.brief}!</div>`;
-            chatModal.style.display = 'flex';
-
-            const chatSend = document.getElementById('chat-send');
-            const chatInput = document.getElementById('chat-input');
-            const voiceToggle = document.getElementById('voice-toggle');
-            const chatClose = document.getElementById('chat-close');
-
-            async function getLLMResponse(userInput, context) {
-                try {
-                    const response = await fetch('museum-scanner-v2.vercel.app/api/xai', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            model: 'grok-4',
-                            messages: [
-                                { role: 'system', content: `You are a history expert at Denman Island Museum. Provide engaging answers about the artifact: ${context.brief}. Description: ${context.full}.` },
-                                { role: 'user', content: userInput }
-                            ],
-                            max_tokens: 500,
-                            temperature: 0.7
-                        })
-                    });
-                    if (!response.ok) throw new Error('API error');
-                    const data = await response.json();
-                    return data.choices[0].message.content;
-                } catch (err) {
-                    return `Oops! Chat error: ${err.message}`;
-                }
-            }
-
-            chatSend.onclick = async () => {
-                const userInput = chatInput.value.trim();
-                if (userInput) {
-                    chatHistory.innerHTML += `<div class="chat-message user">${userInput}</div>`;
-                    const botMessage = document.createElement('div');
-                    botMessage.className = 'chat-message bot';
-                    botMessage.textContent = 'Thinking...';
-                    chatHistory.appendChild(botMessage);
-                    chatHistory.scrollTop = chatHistory.scrollHeight;
-                    const response = await getLLMResponse(userInput, item);
-                    botMessage.textContent = response;
-                    chatHistory.scrollTop = chatHistory.scrollHeight;
-                    chatInput.value = '';
-                    if (isVoiceActive) speak(response);
-                }
-            };
-
-            voiceToggle.onclick = () => {
-                if (!isVoiceActive) {
-                    try {
-                        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-                        recognition.lang = 'en-US';
-                        recognition.onresult = (event) => {
-                            chatInput.value = event.results[0][0].transcript;
-                            chatSend.click();
-                        };
-                        recognition.start();
-                        voiceToggle.textContent = '🎙️';
-                        isVoiceActive = true;
-                    } catch (err) {
-                        alert('Voice input not supported.');
-                    }
-                } else {
-                    recognition.stop();
-                    voiceToggle.textContent = '🎤';
-                    isVoiceActive = false;
-                }
-            };
-
-            function speak(text) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                window.speechSynthesis.speak(utterance);
-            }
-
-            chatClose.onclick = () => {
-                chatModal.style.display = 'none';
-                if (isVoiceActive) {
-                    recognition.stop();
-                    voiceToggle.textContent = '🎤';
-                    isVoiceActive = false;
-                }
-            };
-        }
-
-        async function init() {
-            await setupCamera();
-            await loadModel();
-            setupCanvasClick();
-            document.getElementById('filter-container').style.display = 'none';
-        }
-        init();
-    </script>
-</body>
-</html>
+    <script src="
