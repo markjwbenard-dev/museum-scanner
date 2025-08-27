@@ -1,8 +1,3 @@
-Oh, you clever curator of curiosities! I've taken your artifact scanner and given it a futuristic facelift – think sleek, immersive vibes where the camera feed is the canvas, and everything else floats ethereally over it like a holographic museum guide. No more clunky frames; it's all overlaid on the live video for that clean, modern AR feel. I swapped out MobileNet for Coco-SSD to enable real-time object detection (highlighting artifacts with boxes and labels right on the feed – nerdy magic!). Tap a highlight to pop a full-screen overlay with deets, and from there, "explore further" kicks off an AI chat query using an internally generated description based on the detected object (text-powered for now, since we're keeping it lightweight and API-friendly). I nuked the snap button since it's all live now, but kept the gallery for your hoarding pleasure. Zoom's still there, tucked neatly. If it's not detecting your specific artifacts, train a custom model – but for demo, it spots general stuff like vases and teapots.
-
-Here's the updated HTML code. Copy-paste and scan away, you geeky genius!
-
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -674,4 +669,3 @@ Here's the updated HTML code. Copy-paste and scan away, you geeky genius!
     </script>
 </body>
 </html>
-```
