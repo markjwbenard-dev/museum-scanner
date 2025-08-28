@@ -43,18 +43,6 @@
             z-index: 2;
             pointer-events: auto;
         }
-        #no-detection-message {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3;
-            background: rgba(37, 37, 37, 0.7);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            display: none;
-        }
         #error-message, #loading-message {
             position: absolute;
             top: 50%;
@@ -263,7 +251,7 @@
             button { font-size: 0.8rem; padding: 8px 16px; }
             #detailed-text { font-size: 0.9rem; }
             #zoom-slider { height: 100px; }
-            #error-message, #loading-message, #no-detection-message { font-size: 0.8rem; padding: 10px; }
+            #error-message, #loading-message { font-size: 0.8rem; padding: 10px; }
             #close-details { font-size: 1.5rem; padding: 8px; }
         }
     </style>
@@ -280,7 +268,6 @@
         </div>
         <div id="error-message" aria-live="assertive"></div>
         <div id="loading-message" aria-live="polite">Loading scanner, please wait...</div>
-        <div id="no-detection-message" aria-live="polite">No artifacts detected—try pointing at a vase or cup!</div>
     </div>
     <h1 id="header" aria-label="Denman Island Museum Artifact Scanner">Denman Island Museum Artifact Scanner</h1>
     <div id="detailed-desc" aria-live="polite">
@@ -311,7 +298,6 @@
         let currentPredictions = [];
         let canvas;
         let ctx;
-        let noDetectionTimeout;
 
         function showError(message) {
             const errorDiv = document.getElementById('error-message');
@@ -329,14 +315,6 @@
 
         function hideLoading() {
             document.getElementById('loading-message').style.display = 'none';
-        }
-
-        function showNoDetection() {
-            clearTimeout(noDetectionTimeout);
-            document.getElementById('no-detection-message').style.display = 'block';
-            noDetectionTimeout = setTimeout(() => {
-                document.getElementById('no-detection-message').style.display = 'none';
-            }, 5000);
         }
 
         async function checkCameraPermissions() {
@@ -489,11 +467,7 @@
             }
             model.detect(document.getElementById('video')).then(preds => {
                 currentPredictions = preds.filter(p => p.score > 0.5);
-                console.log('Detections:', currentPredictions); // Log for debugging
                 drawHighlights();
-                if (currentPredictions.length === 0) {
-                    showNoDetection();
-                }
                 requestAnimationFrame(detect);
             }).catch(err => {
                 console.error('Detection error:', err);
@@ -586,14 +560,14 @@
                 console.log('Close details clicked');
             };
 
-            // Failsafe: auto-close after 15 seconds
+            // Failsafe: auto-close after 20 seconds
             setTimeout(() => {
                 if (detailedDesc.style.display === 'flex') {
                     detailedDesc.style.display = 'none';
                     detailedDesc.style.pointerEvents = 'none';
                     showError('Popup auto-closed due to inactivity.');
                 }
-            }, 15000);
+            }, 20000);
 
             detailedDesc.style.display = 'flex';
             detailedDesc.style.pointerEvents = 'auto';
