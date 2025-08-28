@@ -9,7 +9,7 @@
   "routes": [
     {
       "src": "/api/xai",
-      "dest": "/api/xai.js"
+      "dest": "/server/api/xai.js"
     }
   ],
   "headers": [
@@ -23,3 +23,4 @@
     }
   ]
 }
+
