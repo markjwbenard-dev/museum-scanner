@@ -256,6 +256,7 @@
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 </head>
 <body>
@@ -451,8 +452,10 @@
 
         async function loadModel() {
             try {
+                await tf.setBackend('wasm');
+                await tf.ready();
                 model = await cocoSsd.load();
-                console.log('Coco-SSD model loaded successfully');
+                console.log('Coco-SSD model loaded with WASM backend for mobile');
                 hideLoading();
             } catch (err) {
                 console.error('Model load error:', err);
